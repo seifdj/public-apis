@@ -165,7 +165,48 @@ dialog h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-
 .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 .actions .spacer { flex: 1; }
 
+/* Fiche entreprise & pipeline */
+.crumb { all: unset; cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 600; }
+.crumb:hover { color: var(--accent); }
+.pipe { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.pipe .col h4 small { color: var(--muted); font-weight: 500; }
+.card .card-foot { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 2px; }
+.adv { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 1px 8px; font-size: 12px; cursor: pointer; color: var(--muted); }
+.adv:hover { color: var(--accent); border-color: var(--accent); }
+.due { color: var(--warn); font-weight: 700; }
+.services { display: flex; flex-wrap: wrap; gap: 6px; }
+.services span { background: var(--accent-soft); color: var(--accent); border-radius: 6px; padding: 3px 10px; font-size: 13px; font-weight: 600; }
+.chip.prospect { background: var(--sunken); color: var(--muted); }
+.chip.contacte { background: var(--accent-soft); color: var(--accent); }
+.chip.devis { background: var(--warn-soft); color: var(--warn); }
+.chip.gagne { background: var(--good-soft); color: var(--good); }
+.chip.perdu { background: var(--bad-soft); color: var(--bad); }
+.contact { font-family: var(--font-data); font-size: 12px; user-select: all; }
+
+/* Orbe vocal de Jarvis */
+.chat-top { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.orb { width: 44px; height: 44px; border-radius: 50%; position: relative; display: grid; place-items: center; flex: none; }
+.orb::before, .orb::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); opacity: .35; }
+.orb::after { inset: 8px; opacity: .6; }
+.orb i { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); }
+.orb-label { font-size: 13px; color: var(--muted); flex: 1; min-width: 140px; }
+.mic { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: grid; place-items: center; flex: none; }
+.mic svg { width: 20px; height: 20px; fill: var(--ink); }
+.mic[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); }
+.mic[aria-pressed="true"] svg { fill: var(--surface); }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+@media (prefers-reduced-motion: no-preference) {
+  .orb[data-state="speaking"]::before { animation: ring 1.1s ease-out infinite; }
+  .orb[data-state="speaking"]::after { animation: ring 1.1s ease-out .35s infinite; }
+  .orb[data-state="listening"] i { animation: beat .8s ease-in-out infinite alternate; background: var(--bad); }
+  .orb[data-state="thinking"]::before { border-style: dashed; animation: spin 2s linear infinite; opacity: .7; }
+}
+@keyframes ring { from { transform: scale(.7); opacity: .8; } to { transform: scale(1.35); opacity: 0; } }
+@keyframes beat { from { transform: scale(.8); } to { transform: scale(1.25); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 @media (max-width: 1000px) {
+  .pipe { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid2 { grid-template-columns: minmax(0, 1fr); }
   .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -179,7 +220,7 @@ dialog h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-
   .rail-foot { margin: 0 0 0 auto; flex-direction: row; align-items: center; }
   .rail-foot .who { display: none; }
   main { padding-inline: 16px; padding-block: 18px 40px; }
-  .board { grid-template-columns: minmax(0, 1fr); }
+  .board, .pipe { grid-template-columns: minmax(0, 1fr); }
   .chat { height: calc(100vh - 200px); }
   .head h2 { font-size: 22px; }
 }
@@ -211,16 +252,24 @@ const SECTIONS = [
   { id: "objectifs", label: "Objectifs", col: "goals" },
   { id: "projets", label: "Projets", col: "projects" },
   { id: "entreprises", label: "Entreprises", col: "companies" },
+  { id: "clients", label: "Clients", col: "clients" },
   { id: "finances", label: "Finances", col: "transactions" },
   { id: "jarvis", label: "Parler à Jarvis" },
 ];
 const PROJECT_STATUS = { idee: "Idée", en_cours: "En cours", pause: "En pause", termine: "Terminé" };
 const COMPANY_STATUS = { active: "Active", projet: "Future / en projet" };
-const COLS = ["goals", "projects", "companies", "transactions"];
+const STAGES = { prospect: "Prospect", contacte: "Contacté", devis: "Devis envoyé", gagne: "Client gagné", perdu: "Perdu" };
+const STAGE_ORDER = Object.keys(STAGES);
+const OPEN_STAGES = ["prospect", "contacte", "devis"];
+const COLS = ["goals", "projects", "companies", "transactions", "clients"];
 
-const S = { goals: [], projects: [], companies: [], transactions: [], chat: [], settings: { currency: "EUR" }, loaded: {} };
+const S = { goals: [], projects: [], companies: [], transactions: [], clients: [], chat: [], settings: { currency: "EUR" }, loaded: {} };
 let db = null, sample = null, ready = false, offline = false;
 let view = "accueil";
+let currentCompany = null;
+let orbState = "";
+let voiceOn = false;
+try { voiceOn = localStorage.getItem("jarvis-voice") === "1"; } catch (e) {}
 let pending = null; // réponse de Jarvis en cours d'écriture
 let busy = false;
 let briefing = "";
@@ -264,7 +313,8 @@ function totalBalance() { return S.transactions.reduce((s, t) => s + n(t.amount)
 
 /* ---------- Rendu ---------- */
 function renderNav() {
-  $("#nav").innerHTML = SECTIONS.map(s => `<button type="button" data-view="${s.id}" ${s.id === view ? 'aria-current="page"' : ""}>${esc(s.label)}${s.col ? `<span class="count">${S[s.col].length}</span>` : ""}</button>`).join("");
+  const navView = view === "entreprise" ? "entreprises" : view;
+  $("#nav").innerHTML = SECTIONS.map(s => `<button type="button" data-view="${s.id}" ${s.id === navView ? 'aria-current="page"' : ""}>${esc(s.label)}${s.col ? `<span class="count">${S[s.col].length}</span>` : ""}</button>`).join("");
 }
 function render() {
   renderNav();
@@ -273,7 +323,8 @@ function render() {
   const keepScroll = view === "jarvis" ? null : window.scrollY;
   let html = "";
   if (offline) html += `<div class="notice">Les données ne sont pas disponibles dans cet aperçu. Ouvre la page sur claude.ai en étant connecté pour enregistrer tes objectifs et parler à Jarvis.</div>`;
-  html += ({ accueil: vHome, objectifs: vGoals, projets: vProjects, entreprises: vCompanies, finances: vFinances, jarvis: vJarvis })[view]();
+  if (view === "entreprise" && !S.companies.some(c => c.id === currentCompany)) view = S.loaded.companies ? "entreprises" : view;
+  html += ({ accueil: vHome, objectifs: vGoals, projets: vProjects, entreprises: vCompanies, entreprise: vCompany, clients: vClients, finances: vFinances, jarvis: vJarvis })[view]();
   if (view === "jarvis" && m.querySelector("#chatInput")) { updateChat(); return; }
   m.innerHTML = html;
   if (view === "jarvis") { updateChat(); $("#chatInput")?.focus(); }
@@ -325,6 +376,9 @@ function vHome() {
         <div class="brief" id="brief">${briefing ? esc(briefing) : `<span class="empty">${sample ? "Demande à Jarvis un résumé de ta situation et les 3 actions prioritaires du jour." : "Jarvis sera disponible une fois la page ouverte sur claude.ai."}</span>`}</div>
         <form class="quick" id="quickAsk"><input id="quickInput" placeholder="Pose une question à Jarvis…" aria-label="Question pour Jarvis" autocomplete="off"><button class="btn" type="submit">Envoyer</button></form>
       </section>
+      <section class="panel"><h3>Relances clients <button type="button" class="btn small" data-view="clients">Tous les clients</button></h3>
+        <div class="list">${followUps().length ? followUps().slice(0, 6).map(clientRow).join("") : emptyState("Aucune relance prévue. Ajoute tes clients potentiels avec une date de prochaine action.", "clients")}</div>
+      </section>
       <section class="panel"><h3>Projets en cours <button type="button" class="btn small" data-view="projets">Tout voir</button></h3>
         <div class="list">${active.length ? active.slice(0, 6).map(p => `<div class="row" data-edit="projects" data-id="${esc(p.id)}" tabindex="0" role="button"><div class="main"><strong>${esc(p.name)}</strong><small>${esc(p.nextStep ? "Prochaine étape : " + p.nextStep : companyName(p.company) || "")}</small></div><span class="chip en_cours">En cours</span></div>`).join("") : emptyState("Aucun projet en cours.", "projects")}</div>
       </section>
@@ -371,17 +425,98 @@ function vCompanies() {
     const tx = S.transactions.filter(t => t.company === c.id);
     const inc = tx.filter(t => n(t.amount) > 0).reduce((s, t) => s + n(t.amount), 0), exp = tx.filter(t => n(t.amount) < 0).reduce((s, t) => s - n(t.amount), 0);
     const pr = S.projects.filter(p => p.company === c.id);
-    return `<div class="company" data-edit="companies" data-id="${esc(c.id)}" tabindex="0" role="button">
+    const open = S.clients.filter(x => x.company === c.id && OPEN_STAGES.includes(x.stage || "prospect")).length;
+    return `<div class="company" data-company="${esc(c.id)}" tabindex="0" role="button" aria-label="Ouvrir la fiche ${esc(c.name)}">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><h4>${esc(c.name)}</h4><span class="chip ${c.status === "active" ? "active" : "projet"}">${esc(COMPANY_STATUS[c.status] || "Future / en projet")}</span></div>
       ${c.sector ? `<small style="color:var(--muted)">${esc(c.sector)}</small>` : ""}
       <dl><dt>CA mensuel visé</dt><dd class="num">${n(c.monthlyRevenue) ? money(c.monthlyRevenue, true) : "—"}</dd>
-      <dt>Revenus enregistrés</dt><dd class="num">${money(inc, true)}</dd><dt>Dépenses enregistrées</dt><dd class="num">${money(exp, true)}</dd><dt>Projets</dt><dd class="num">${pr.length}</dd></dl>
+      <dt>Revenus enregistrés</dt><dd class="num">${money(inc, true)}</dd><dt>Dépenses enregistrées</dt><dd class="num">${money(exp, true)}</dd><dt>Projets</dt><dd class="num">${pr.length}</dd><dt>Clients potentiels</dt><dd class="num">${open}</dd></dl>
       ${c.notes ? `<small style="color:var(--muted);overflow-wrap:anywhere">${esc(c.notes)}</small>` : ""}</div>`;
   };
   const act = S.companies.filter(c => c.status === "active"), fut = S.companies.filter(c => c.status !== "active");
-  return head("Entreprises", "Tes entreprises actuelles et celles que tu prépares.", `<button type="button" class="btn primary" data-new="companies">+ Nouvelle entreprise</button>`) +
+  return head("Entreprises", "Tes entreprises actuelles et celles que tu prépares. Ouvre une entreprise pour voir son tableau de bord.", `<button type="button" class="btn primary" data-new="companies">+ Nouvelle entreprise</button>`) +
     `<div class="stack"><div><div class="eyebrow" style="margin-bottom:8px">Actives</div>${act.length ? `<div class="companies">${act.map(card).join("")}</div>` : emptyState("Aucune entreprise active.", "companies")}</div>
      <div><div class="eyebrow" style="margin-bottom:8px">Futures / en projet</div>${fut.length ? `<div class="companies">${fut.map(card).join("")}</div>` : emptyState("Note ici les entreprises que tu veux créer.", "companies")}</div></div>`;
+}
+
+/* ---------- Clients & fiche entreprise ---------- */
+const stageOf = x => STAGES[x.stage] ? x.stage : "prospect";
+function followUps(companyId) {
+  return S.clients.filter(x => OPEN_STAGES.includes(stageOf(x)) && x.nextDate && (!companyId || x.company === companyId))
+    .sort((a, b) => String(a.nextDate).localeCompare(String(b.nextDate)));
+}
+function dueLabel(d) {
+  if (!d) return "";
+  const t = today();
+  return d < t ? `<span class="due">En retard (${esc(fmtDate(d))})</span>` : d === t ? `<span class="due">Aujourd'hui</span>` : esc(fmtDate(d));
+}
+function clientRow(x) {
+  return `<div class="row" data-edit="clients" data-id="${esc(x.id)}" tabindex="0" role="button"><div class="main"><strong>${esc(x.name)}</strong>
+    <small>${x.nextAction ? esc(x.nextAction) + " · " : ""}${dueLabel(x.nextDate)}${!currentCompany || view !== "entreprise" ? (companyName(x.company) ? " · " + esc(companyName(x.company)) : "") : ""}</small></div>
+    <span class="chip ${stageOf(x)}">${esc(STAGES[stageOf(x)])}</span></div>`;
+}
+function clientCard(x) {
+  const st = stageOf(x), i = STAGE_ORDER.indexOf(st), next = OPEN_STAGES.includes(st) ? STAGE_ORDER[i + 1] : null;
+  return `<div class="card" data-edit="clients" data-id="${esc(x.id)}" tabindex="0" role="button">
+    <strong>${esc(x.name)}</strong>
+    ${x.service ? `<small>${esc(x.service)}</small>` : ""}
+    ${x.nextAction || x.nextDate ? `<small>→ ${esc(x.nextAction || "Relancer")} ${x.nextDate ? "· " + dueLabel(x.nextDate) : ""}</small>` : ""}
+    <div class="card-foot"><span class="num">${n(x.value) ? money(x.value, true) : ""}</span>${next ? `<button type="button" class="adv" data-advance="${esc(x.id)}" title="Passer à « ${esc(STAGES[next])} »">${esc(STAGES[next])} →</button>` : ""}</div></div>`;
+}
+function pipeline(list) {
+  return `<div class="pipe">${STAGE_ORDER.map(st => {
+    const items = list.filter(x => stageOf(x) === st);
+    const val = items.reduce((s, x) => s + n(x.value), 0);
+    return `<div class="col"><h4>${esc(STAGES[st])} <small class="num">${items.length}${val ? " · " + money(val, true) : ""}</small></h4>${items.map(clientCard).join("")}</div>`;
+  }).join("")}</div>`;
+}
+function vCompany() {
+  const c = S.companies.find(x => x.id === currentCompany);
+  if (!c) return `<button type="button" class="crumb" data-view="entreprises">← Entreprises</button>` + emptyState("Chargement de l'entreprise…");
+  const tx = S.transactions.filter(t => t.company === c.id);
+  const mk = lastMonths(1)[0];
+  const monthInc = tx.filter(t => monthKey(t.date) === mk && n(t.amount) > 0).reduce((s, t) => s + n(t.amount), 0);
+  const inc = tx.filter(t => n(t.amount) > 0).reduce((s, t) => s + n(t.amount), 0), exp = tx.filter(t => n(t.amount) < 0).reduce((s, t) => s - n(t.amount), 0);
+  const cl = S.clients.filter(x => x.company === c.id);
+  const open = cl.filter(x => OPEN_STAGES.includes(stageOf(x))), won = cl.filter(x => stageOf(x) === "gagne"), lost = cl.filter(x => stageOf(x) === "perdu");
+  const pipeVal = open.reduce((s, x) => s + n(x.value), 0);
+  const conv = won.length + lost.length ? Math.round(won.length / (won.length + lost.length) * 100) : null;
+  const target = n(c.monthlyRevenue), pct = target ? Math.min(100, monthInc / target * 100) : 0;
+  const services = String(c.services || "").split(",").map(s => s.trim()).filter(Boolean);
+  const fu = followUps(c.id), pr = S.projects.filter(p => p.company === c.id);
+  const recent = [...tx].sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 6);
+  return `<button type="button" class="crumb" data-view="entreprises">← Entreprises</button>` +
+    head(c.name, [c.sector, COMPANY_STATUS[c.status] || ""].filter(Boolean).join(" · "), `<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-edit="companies" data-id="${esc(c.id)}">Modifier</button><button type="button" class="btn primary" data-new="clients">+ Client potentiel</button></div>`) + `
+  <div class="kpis">
+    <div class="kpi"><span class="eyebrow">CA du mois</span><span class="val num">${money(monthInc, true)}</span>${target ? `<div class="bar"><i class="${pct >= 100 ? "done" : ""}" style="width:${pct.toFixed(1)}%"></i></div><span class="sub">Objectif <span class="num">${money(target, true)}</span>/mois · ${Math.round(pct)} %</span>` : `<span class="sub">Fixe un CA mensuel visé dans « Modifier »</span>`}</div>
+    <div class="kpi"><span class="eyebrow">Pipeline ouvert</span><span class="val num">${money(pipeVal, true)}</span><span class="sub">${open.length} client(s) potentiel(s) en cours</span></div>
+    <div class="kpi"><span class="eyebrow">Clients gagnés</span><span class="val num">${won.length}</span><span class="sub">${conv === null ? "Taux de conversion : pas encore de données" : `Taux de conversion : <span class="num">${conv} %</span>`}</span></div>
+    <div class="kpi"><span class="eyebrow">Résultat cumulé</span><span class="val num ${inc - exp >= 0 ? "pos" : "neg"}">${money(inc - exp, true)}</span><span class="sub">Revenus <span class="num">${money(inc, true)}</span> · dépenses <span class="num">${money(exp, true)}</span></span></div>
+  </div>
+  <section class="panel" style="margin-bottom:16px"><h3>Clients potentiels <span class="eyebrow">Clique sur « → » pour faire avancer un client</span></h3>
+    ${cl.length ? pipeline(cl) : emptyState("Aucun client potentiel pour l'instant. Ajoute les personnes ou entreprises à démarcher, ou dis à Jarvis : « ajoute Mme Dupont comme prospect pour un ménage, 300 € ».", "clients")}</section>
+  <div class="grid2">
+    <div class="stack">
+      <section class="panel"><h3>Plan de développement <button type="button" class="btn small" id="planBtn" data-plan="${esc(c.id)}" ${sample && !busy ? "" : "disabled"}>${c.plan ? "Mettre à jour" : "Demander à Jarvis"}</button></h3>
+        <div class="brief" id="plan">${c.plan ? esc(c.plan) : `<span class="empty">Jarvis analyse tes services, tes clients et tes chiffres, puis te propose un plan concret pour faire grandir ${esc(c.name)}.</span>`}</div></section>
+      <section class="panel"><h3>Relances à faire</h3><div class="list">${fu.length ? fu.map(clientRow).join("") : emptyState("Aucune relance prévue.")}</div></section>
+    </div>
+    <div class="stack">
+      <section class="panel"><h3>Services proposés <button type="button" class="btn small" data-edit="companies" data-id="${esc(c.id)}">Modifier</button></h3>
+        ${services.length ? `<div class="services">${services.map(s => `<span>${esc(s)}</span>`).join("")}</div>` : emptyState("Liste tes services dans « Modifier » (séparés par des virgules).")}
+        ${c.notes ? `<small style="color:var(--muted);overflow-wrap:anywhere">${esc(c.notes)}</small>` : ""}</section>
+      <section class="panel"><h3>Projets <button type="button" class="btn small" data-new="projects">+ Projet</button></h3><div class="list">${pr.length ? pr.map(p => `<div class="row" data-edit="projects" data-id="${esc(p.id)}" tabindex="0" role="button"><div class="main"><strong>${esc(p.name)}</strong><small>${esc(p.nextStep || "")}</small></div><span class="chip ${esc(p.status || "idee")}">${esc(PROJECT_STATUS[p.status] || "Idée")}</span></div>`).join("") : emptyState("Aucun projet lié.")}</div></section>
+      <section class="panel"><h3>Dernières opérations <button type="button" class="btn small" data-new="transactions">+ Opération</button></h3><div class="list">${recent.length ? recent.map(t => `<div class="row" data-edit="transactions" data-id="${esc(t.id)}" tabindex="0" role="button"><div class="main"><strong>${esc(t.label)}</strong><small>${esc(fmtDate(t.date))}</small></div><span class="num ${n(t.amount) >= 0 ? "pos" : "neg"}">${money(t.amount)}</span></div>`).join("") : emptyState("Aucune opération rattachée.")}</div></section>
+    </div>
+  </div>`;
+}
+let clientFilter = "";
+function vClients() {
+  const list = S.clients.filter(x => !clientFilter || stageOf(x) === clientFilter).sort((a, b) => STAGE_ORDER.indexOf(stageOf(a)) - STAGE_ORDER.indexOf(stageOf(b)) || String(a.nextDate || "9").localeCompare(String(b.nextDate || "9")));
+  const open = S.clients.filter(x => OPEN_STAGES.includes(stageOf(x)));
+  return head("Clients", `${open.length} client(s) potentiel(s) en cours, pour ${money(open.reduce((s, x) => s + n(x.value), 0), true)} de chiffre d'affaires possible.`, `<button type="button" class="btn primary" data-new="clients">+ Client potentiel</button>`) +
+    `<section class="panel"><h3>Tous les clients <select id="clientFilter" aria-label="Filtrer par étape" style="border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:4px 8px;font-weight:500"><option value="">Toutes les étapes</option>${STAGE_ORDER.map(s => `<option value="${s}" ${s === clientFilter ? "selected" : ""}>${esc(STAGES[s])}</option>`).join("")}</select></h3>
+    ${list.length ? `<div class="table-wrap"><table><thead><tr><th>Client</th><th>Entreprise</th><th>Étape</th><th>Service</th><th class="amt">Montant</th><th>Prochaine action</th></tr></thead><tbody>${list.map(x => `<tr data-edit="clients" data-id="${esc(x.id)}" tabindex="0"><td><strong>${esc(x.name)}</strong>${x.phone || x.city ? `<br><small style="color:var(--muted)">${esc([x.phone, x.city].filter(Boolean).join(" · "))}</small>` : ""}</td><td>${esc(companyName(x.company))}</td><td><span class="chip ${stageOf(x)}">${esc(STAGES[stageOf(x)])}</span></td><td>${esc(x.service || "")}</td><td class="amt num">${n(x.value) ? money(x.value, true) : ""}</td><td>${esc(x.nextAction || "")}${x.nextDate ? `<br><small>${dueLabel(x.nextDate)}</small>` : ""}</td></tr>`).join("")}</tbody></table></div>` : emptyState("Aucun client pour l'instant.", "clients")}</section>`;
 }
 
 let finMonth = "";
@@ -402,9 +537,13 @@ function vFinances() {
 
 function vJarvis() {
   return head("Parler à Jarvis", "Jarvis connaît tes objectifs, projets, entreprises et finances. Il peut les créer et les mettre à jour pour toi.", `<button type="button" class="btn small" id="clearChat">Effacer la conversation</button>`) + `
-  <div class="chat"><div class="msgs" id="msgs" aria-live="polite"></div>
+  <div class="chat">
+  <div class="chat-top"><div class="orb" id="orb" data-state="${orbState}" aria-hidden="true"><i></i></div>
+    <span class="orb-label" id="orbLabel">${esc(orbText())}</span>
+    <label class="toggle" for="voiceToggle"><input type="checkbox" id="voiceToggle" ${voiceOn ? "checked" : ""}> Jarvis parle à voix haute</label></div>
+  <div class="msgs" id="msgs" aria-live="polite"></div>
   <div class="suggest" id="suggest">${["Fais le point sur ma situation financière", "Crée un objectif : fonds d'urgence de 5 000 € d'ici décembre", "J'ai reçu 1 200 € d'un client aujourd'hui", "Aide-moi à planifier ma prochaine entreprise", "Quelles dépenses puis-je réduire ?"].map(s => `<button type="button" data-suggest="${esc(s)}">${esc(s)}</button>`).join("")}</div>
-  <form class="composer" id="composer"><textarea id="chatInput" rows="1" placeholder="${sample ? "Écris à Jarvis… (Entrée pour envoyer)" : "Jarvis sera disponible une fois la page ouverte sur claude.ai"}" aria-label="Message pour Jarvis"></textarea><button class="btn primary" type="submit" id="sendBtn">Envoyer</button></form></div>`;
+  <form class="composer" id="composer"><button type="button" class="mic" id="micBtn" aria-pressed="${orbState === "listening"}" aria-label="Parler à Jarvis" title="Parler à Jarvis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg></button><textarea id="chatInput" rows="1" placeholder="${sample ? "Écris à Jarvis… (Entrée pour envoyer)" : "Jarvis sera disponible une fois la page ouverte sur claude.ai"}" aria-label="Message pour Jarvis"></textarea><button class="btn primary" type="submit" id="sendBtn">Envoyer</button></form></div>`;
 }
 function updateChat() {
   const box = $("#msgs"); if (!box) return;
@@ -436,7 +575,21 @@ const FORMS = {
     { k: "name", label: "Nom", req: true },
     { k: "status", label: "Statut", type: "select", opts: COMPANY_STATUS },
     { k: "sector", label: "Secteur d'activité" },
+    { k: "services", label: "Services proposés", ph: "Ex. ménage, jardinage, petits travaux", hint: "Sépare les services par des virgules." },
     { k: "monthlyRevenue", label: "Chiffre d'affaires mensuel visé", type: "number" },
+    { k: "notes", label: "Notes", type: "textarea" } ] },
+  clients: { title: "Client", fields: [
+    { k: "name", label: "Nom du client ou de l'entreprise", req: true },
+    { k: "company", label: "Pour quelle entreprise", type: "company" },
+    { k: "stage", label: "Étape", type: "select", opts: STAGES },
+    { k: "service", label: "Service demandé" },
+    { k: "value", label: "Montant estimé", type: "number" },
+    { k: "phone", label: "Téléphone", type: "tel" },
+    { k: "email", label: "E-mail", type: "email" },
+    { k: "city", label: "Ville / quartier" },
+    { k: "source", label: "Comment il t'a connu", ph: "Bouche-à-oreille, Facebook, flyer…" },
+    { k: "nextAction", label: "Prochaine action", ph: "Appeler, envoyer le devis, passer voir…" },
+    { k: "nextDate", label: "Date de la prochaine action", type: "date" },
     { k: "notes", label: "Notes", type: "textarea" } ] },
   transactions: { title: "Opération", fields: [
     { k: "label", label: "Libellé", req: true, ph: "Ex. Facture client, loyer, courses" },
@@ -450,7 +603,7 @@ function openForm(col, id) {
   if (!db) return;
   const spec = FORMS[col], item = id ? S[col].find(x => x.id === id) : null;
   editing = { col, id: item ? id : null }; confirmDel = false;
-  const val = k => item ? item[k] ?? "" : (k === "date" ? today() : k === "status" ? (col === "companies" ? "projet" : "en_cours") : "");
+  const val = k => item ? item[k] ?? "" : (k === "date" ? today() : k === "status" ? (col === "companies" ? "projet" : "en_cours") : k === "stage" ? "prospect" : k === "company" && view === "entreprise" ? currentCompany : "");
   const field = f => {
     const id = "f_" + f.k, v = val(f.k);
     let input;
@@ -496,8 +649,10 @@ function snapshotForAI() {
     date_du_jour: today(), devise: S.settings.currency,
     mois_en_cours: cur, six_derniers_mois: lastMonths(6).map(m => ({ mois: m, ...monthTotals(m) })), solde_cumule: totalBalance(),
     objectifs: S.goals.map(g => { const i = goalInfo(g); return { id: g.id, titre: g.title, cible: i.target, actuel: i.cur, echeance: g.deadline || null, categorie: g.category || null, pourcentage: Math.round(i.pct), a_epargner_par_mois: Math.round(i.perMonth) }; }),
+    clients: S.clients.map(x => ({ id: x.id, nom: x.name, entreprise: companyName(x.company) || null, etape: stageOf(x), service: x.service || null, montant_estime: n(x.value), telephone: x.phone || null, ville: x.city || null, source: x.source || null, prochaine_action: x.nextAction || null, date_prochaine_action: x.nextDate || null, notes: x.notes || null })),
     projets: S.projects.map(p => ({ id: p.id, nom: p.name, statut: p.status, entreprise: companyName(p.company) || null, prochaine_etape: p.nextStep || null, budget: n(p.budget), notes: p.notes || null })),
-    entreprises: S.companies.map(c => ({ id: c.id, nom: c.name, statut: c.status, secteur: c.sector || null, ca_mensuel_vise: n(c.monthlyRevenue), notes: c.notes || null })),
+    entreprises: S.companies.map(c => ({ id: c.id, nom: c.name, statut: c.status, secteur: c.sector || null, services: c.services || null, ca_mensuel_vise: n(c.monthlyRevenue), notes: c.notes || null })),
+    page_ouverte: view === "entreprise" ? "Fiche de l'entreprise " + companyName(currentCompany) : view,
     operations_recentes: [...S.transactions].sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 60).map(t => ({ id: t.id, date: t.date, libelle: t.label, montant: n(t.amount), categorie: t.category || null, entreprise: companyName(t.company) || null })),
   };
 }
@@ -524,11 +679,17 @@ function makeTools(log) {
       inputSchema: { type: "object", properties: { id: { type: "string" }, nom: { type: "string" }, statut: { type: "string", enum: Object.keys(PROJECT_STATUS) }, prochaine_etape: { type: "string" }, budget: { type: "number" }, notes: { type: "string" } }, required: ["id"] },
       execute: i => upd("projects", i.id, { name: i.nom, status: i.statut, nextStep: i.prochaine_etape, budget: i.budget, notes: i.notes }, "✓ Projet mis à jour") },
     { name: "ajouter_entreprise", description: "Ajoute une entreprise. statut : active (existe déjà) ou projet (future).",
-      inputSchema: { type: "object", properties: { nom: { type: "string" }, statut: { type: "string", enum: ["active", "projet"] }, secteur: { type: "string" }, ca_mensuel_vise: { type: "number" }, notes: { type: "string" } }, required: ["nom"] },
-      execute: i => add("companies", { name: i.nom, status: i.statut || "projet", sector: i.secteur || "", monthlyRevenue: n(i.ca_mensuel_vise), notes: i.notes || "" }, "✓ Entreprise ajoutée : " + i.nom) },
+      inputSchema: { type: "object", properties: { nom: { type: "string" }, statut: { type: "string", enum: ["active", "projet"] }, secteur: { type: "string" }, services: { type: "string", description: "Services séparés par des virgules" }, ca_mensuel_vise: { type: "number" }, notes: { type: "string" } }, required: ["nom"] },
+      execute: i => add("companies", { name: i.nom, status: i.statut || "projet", sector: i.secteur || "", services: i.services || "", monthlyRevenue: n(i.ca_mensuel_vise), notes: i.notes || "" }, "✓ Entreprise ajoutée : " + i.nom) },
     { name: "modifier_entreprise", description: "Met à jour une entreprise existante par son id.",
-      inputSchema: { type: "object", properties: { id: { type: "string" }, nom: { type: "string" }, statut: { type: "string", enum: ["active", "projet"] }, secteur: { type: "string" }, ca_mensuel_vise: { type: "number" }, notes: { type: "string" } }, required: ["id"] },
-      execute: i => upd("companies", i.id, { name: i.nom, status: i.statut, sector: i.secteur, monthlyRevenue: i.ca_mensuel_vise, notes: i.notes }, "✓ Entreprise mise à jour") },
+      inputSchema: { type: "object", properties: { id: { type: "string" }, nom: { type: "string" }, statut: { type: "string", enum: ["active", "projet"] }, secteur: { type: "string" }, services: { type: "string" }, ca_mensuel_vise: { type: "number" }, notes: { type: "string" } }, required: ["id"] },
+      execute: i => upd("companies", i.id, { name: i.nom, status: i.statut, sector: i.secteur, services: i.services, monthlyRevenue: i.ca_mensuel_vise, notes: i.notes }, "✓ Entreprise mise à jour") },
+    { name: "ajouter_client", description: "Ajoute un client ou client potentiel (prospect) pour une entreprise. etape parmi prospect, contacte, devis, gagne, perdu. date_prochaine_action au format AAAA-MM-JJ.",
+      inputSchema: { type: "object", properties: { nom: { type: "string" }, entreprise: { type: "string", description: "Nom de l'entreprise de l'utilisateur concernée" }, etape: { type: "string", enum: STAGE_ORDER }, service: { type: "string" }, montant_estime: { type: "number" }, telephone: { type: "string" }, email: { type: "string" }, ville: { type: "string" }, source: { type: "string" }, prochaine_action: { type: "string" }, date_prochaine_action: { type: "string" }, notes: { type: "string" } }, required: ["nom"] },
+      execute: i => add("clients", { name: i.nom, company: findCompanyId(i.entreprise) || (view === "entreprise" ? currentCompany : ""), stage: i.etape || "prospect", service: i.service || "", value: n(i.montant_estime), phone: i.telephone || "", email: i.email || "", city: i.ville || "", source: i.source || "", nextAction: i.prochaine_action || "", nextDate: i.date_prochaine_action || "", notes: i.notes || "" }, "✓ Client ajouté : " + i.nom) },
+    { name: "modifier_client", description: "Met à jour un client existant par son id (étape, prochaine action, montant, notes…).",
+      inputSchema: { type: "object", properties: { id: { type: "string" }, nom: { type: "string" }, etape: { type: "string", enum: STAGE_ORDER }, service: { type: "string" }, montant_estime: { type: "number" }, telephone: { type: "string" }, email: { type: "string" }, ville: { type: "string" }, prochaine_action: { type: "string" }, date_prochaine_action: { type: "string" }, notes: { type: "string" } }, required: ["id"] },
+      execute: i => upd("clients", i.id, { name: i.nom, stage: i.etape, service: i.service, value: i.montant_estime, phone: i.telephone, email: i.email, city: i.ville, nextAction: i.prochaine_action, nextDate: i.date_prochaine_action, notes: i.notes }, "✓ Client mis à jour") },
     { name: "supprimer", description: "Supprime un élément. Ne l'utilise que si l'utilisateur l'a demandé explicitement.",
       inputSchema: { type: "object", properties: { type: { type: "string", enum: COLS }, id: { type: "string" } }, required: ["type", "id"] },
       execute: async i => { if (!COLS.includes(i.type) || !S[i.type].some(x => x.id === i.id)) throw new Error("Élément introuvable"); await db.doc(i.type + "/" + i.id).delete(); log("✓ Élément supprimé"); return { ok: true }; } },
@@ -537,10 +698,12 @@ function makeTools(log) {
 const SYSTEM = `Tu es Jarvis, l'assistant personnel de l'utilisateur pour ses objectifs financiers, ses projets et ses entreprises (actuelles et futures).
 Tu réponds en français, de façon directe, chaleureuse et concrète, avec des chiffres précis. Pas de longs paragraphes : va à l'essentiel, utilise des listes courtes quand c'est utile. N'utilise pas de Markdown lourd (pas de titres #, pas de tableaux).
 Tu peux agir sur son tableau de bord grâce aux outils : quand il te donne une info (dépense, revenu, objectif, idée de projet, entreprise), enregistre-la avec l'outil adapté, puis confirme en une phrase. Pour modifier un élément, utilise son id tel qu'il figure dans les données. Ne supprime rien sans demande explicite.
+Tu aides aussi à développer ses entreprises : suivi des clients potentiels (prospect → contacté → devis envoyé → client gagné / perdu), relances, prix, idées pour trouver des clients, fidélisation. Quand il parle d'un client potentiel, enregistre-le avec ajouter_client et propose une prochaine action datée.
 Les montants sont dans la devise indiquée. Tu n'es pas un conseiller financier agréé : pour les décisions lourdes (fiscalité, juridique, gros investissements), propose de vérifier avec un professionnel.`;
 
 function buildMessages(history, question) {
-  const ctx = `${SYSTEM}\n\nDONNÉES ACTUELLES DU TABLEAU DE BORD (JSON) :\n${JSON.stringify(snapshotForAI())}`;
+  const voiceNote = voiceOn ? "\n\nMODE VOCAL ACTIF : ta réponse sera lue à voix haute. Réponds en 2 à 4 phrases courtes et naturelles, sans listes ni symboles, comme le Jarvis d'Iron Man : posé, efficace, avec une pointe d'humour." : "";
+  const ctx = `${SYSTEM}${voiceNote}\n\nDONNÉES ACTUELLES DU TABLEAU DE BORD (JSON) :\n${JSON.stringify(snapshotForAI())}`;
   const msgs = [{ role: "user", content: ctx }, { role: "assistant", content: "Compris. Je suis prêt." }];
   for (const m of history) {
     if (m.role !== "user" && m.role !== "assistant") continue;
@@ -551,10 +714,76 @@ function buildMessages(history, question) {
   return msgs;
 }
 
+/* ---------- Voix ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recog = null, micBlocked = false;
+function orbText() {
+  return orbState === "listening" ? "Je vous écoute…" : orbState === "thinking" ? "Analyse en cours…" : orbState === "speaking" ? "Jarvis parle… (touchez l'orbe pour l'arrêter)" : sample ? "À votre service. Appuyez sur le micro ou écrivez." : "Jarvis sera disponible une fois la page ouverte sur claude.ai.";
+}
+function setOrb(s) {
+  orbState = s;
+  const o = $("#orb"); if (o) o.dataset.state = s;
+  const l = $("#orbLabel"); if (l) l.textContent = orbText();
+  const m = $("#micBtn"); if (m) m.setAttribute("aria-pressed", s === "listening");
+}
+function speakable(t) { return String(t).replace(/[*#_`>•|]/g, "").replace(/^\s*[-–]\s*/gm, "").replace(/\n+/g, ". ").replace(/\.\s*\./g, ".").slice(0, 2000); }
+function frVoice() {
+  try { const vs = speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang)); return vs.find(v => /google|thomas|daniel|paul|henri|male|homme/i.test(v.name)) || vs[0] || null; } catch (e) { return null; }
+}
+function speak(text) {
+  if (!voiceOn || !("speechSynthesis" in window) || !text) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(speakable(text));
+    u.lang = "fr-FR"; u.rate = 1.03; u.pitch = 0.9;
+    const v = frVoice(); if (v) u.voice = v;
+    u.onstart = () => setOrb("speaking");
+    u.onend = u.onerror = () => { if (orbState === "speaking") setOrb(""); };
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function stopSpeaking() { try { speechSynthesis.cancel(); } catch (e) {} if (orbState === "speaking") setOrb(""); }
+function listen() {
+  if (orbState === "listening" && recog) { try { recog.stop(); } catch (e) {} return; }
+  stopSpeaking();
+  if (!SR || micBlocked) { alertBox("Le micro n'est pas accessible dans cette page. Astuce : touche la zone de texte puis l'icône micro de ton clavier (dictée) pour parler à Jarvis, il te répondra à voix haute."); $("#chatInput")?.focus(); return; }
+  if (!voiceOn) { voiceOn = true; try { localStorage.setItem("jarvis-voice", "1"); } catch (e) {} const t = $("#voiceToggle"); if (t) t.checked = true; }
+  let heard = "";
+  try {
+    recog = new SR(); recog.lang = "fr-FR"; recog.interimResults = true; recog.continuous = false;
+    recog.onresult = e => { heard = Array.from(e.results).map(r => r[0].transcript).join(""); const i = $("#chatInput"); if (i) i.value = heard; };
+    recog.onerror = e => { if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") { micBlocked = true; alertBox("Le micro est bloqué ici. Utilise la dictée de ton clavier (icône micro) : Jarvis te répondra quand même à voix haute."); } };
+    recog.onend = () => { recog = null; setOrb(""); const v = heard.trim(); if (v) { const i = $("#chatInput"); if (i) i.value = ""; send(v); } };
+    recog.start(); setOrb("listening");
+  } catch (e) { micBlocked = true; setOrb(""); alertBox("Le micro n'a pas pu démarrer. Utilise la dictée de ton clavier."); }
+}
+
+async function makePlan(id) {
+  const c = S.companies.find(x => x.id === id); if (!c || !sample || busy) return;
+  busy = true; setOrb("thinking");
+  const btn = $("#planBtn"); if (btn) btn.disabled = true;
+  const box = $("#plan"); if (box) box.textContent = "Jarvis étudie " + c.name + "…";
+  let text = "";
+  try {
+    const res = await sample(buildMessages([], `Prépare un plan de développement concret pour l'entreprise « ${c.name} » (id ${c.id}) à partir de ses services, de ses clients potentiels, de ses chiffres et de son objectif de CA. Structure en texte simple (pas de Markdown) :
+1. Diagnostic en 2 phrases.
+2. Les 3 clients potentiels à traiter en priorité cette semaine et quoi leur dire.
+3. 5 actions pour trouver de nouveaux clients adaptées à ce type d'activité et à un petit budget.
+4. Un conseil sur les prix ou les offres (forfaits, abonnements, packs).
+5. L'objectif chiffré pour les 30 prochains jours.
+Maximum 250 mots.`), { modelTier: "complex", onText: u => { text = u.text; const b = $("#plan"); if (b) b.textContent = u.text; } });
+    text = res.text.trim();
+    await db.doc("companies/" + c.id).update({ plan: text, planDate: today() });
+    speak("Votre plan pour " + c.name + " est prêt. " + text.split("\n").slice(0, 2).join(" "));
+  } catch (e) { alertBox(e && e.code === "not_granted" ? "Autorise Jarvis à utiliser Claude pour générer le plan." : "Le plan n'a pas pu être généré. Réessaie dans un instant."); }
+  finally { busy = false; if (orbState === "thinking") setOrb(""); render(); }
+}
+
 async function send(text) {
   text = String(text || "").trim();
   if (!text || busy || !sample || !db) return;
-  busy = true; pending = { text: "", tools: [] };
+  stopSpeaking();
+  busy = true; pending = { text: "", tools: [] }; setOrb("thinking");
   if (view !== "jarvis") go("jarvis"); else updateChat();
   try { await db.collection("chat").add({ role: "user", content: text, ts: Date.now() }); } catch (e) {}
   const history = S.chat.filter(m => m.role === "user" || m.role === "assistant").slice(-20);
@@ -566,13 +795,14 @@ async function send(text) {
     const answer = (res.text || "").trim() || "C'est fait.";
     for (const t of toolLog) await db.collection("chat").add({ role: "tool", content: t, ts: Date.now() });
     await db.collection("chat").add({ role: "assistant", content: answer, ts: Date.now() + 1 });
+    setOrb(""); speak(answer);
   } catch (e) {
     const msg = e && e.code === "not_granted" ? "Tu n'as pas autorisé Jarvis à utiliser Claude. Autorise-le depuis le menu Permissions de la page."
       : e && e.code === "rate_limited" ? "Trop de demandes d'un coup. Attends une minute et réessaie."
       : "Je n'ai pas pu répondre (" + ((e && e.message) || "erreur inconnue") + "). Réessaie.";
     try { await db.collection("chat").add({ role: "assistant", content: msg, ts: Date.now() }); } catch (_) {}
     if (e && e.code === "not_granted") sample = null;
-  } finally { busy = false; pending = null; render(); }
+  } finally { busy = false; pending = null; if (orbState === "thinking") setOrb(""); render(); }
 }
 
 async function makeBriefing() {
@@ -582,6 +812,7 @@ async function makeBriefing() {
   try {
     const res = await sample(buildMessages([], "Fais-moi mon briefing du jour en 120 mots maximum : 1) où j'en suis financièrement ce mois-ci, 2) l'objectif qui demande le plus d'attention, 3) trois actions concrètes pour aujourd'hui. Si les données sont vides, explique comment démarrer."), { modelTier: "quick", onText: u => { briefing = u.text; const b = $("#brief"); if (b) b.textContent = u.text; } });
     briefing = res.text.trim();
+    speak(briefing);
   } catch (e) { briefing = e && e.code === "not_granted" ? "Autorise Jarvis à utiliser Claude pour obtenir ton briefing." : "Le briefing n'a pas pu être généré. Réessaie dans un instant."; }
   finally { busy = false; render(); }
 }
@@ -589,9 +820,14 @@ async function makeBriefing() {
 /* ---------- Événements ---------- */
 function go(v) { view = v; try { history.replaceState(null, "", "#" + v); } catch (e) {} render(); window.scrollTo(0, 0); }
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-view],[data-new],[data-edit],[data-suggest],#briefBtn,#clearChat");
+  const t = e.target.closest("[data-view],[data-new],[data-edit],[data-suggest],[data-company],[data-advance],[data-plan],#briefBtn,#clearChat,#micBtn,#orb");
   if (!t) return;
-  if (t.dataset.view) go(t.dataset.view);
+  if (t.dataset.advance) advance(t.dataset.advance);
+  else if (t.dataset.plan) makePlan(t.dataset.plan);
+  else if (t.dataset.company) { currentCompany = t.dataset.company; go("entreprise"); }
+  else if (t.id === "micBtn") listen();
+  else if (t.id === "orb") stopSpeaking();
+  else if (t.dataset.view) go(t.dataset.view);
   else if (t.dataset.new) openForm(t.dataset.new);
   else if (t.dataset.edit) openForm(t.dataset.edit, t.dataset.id);
   else if (t.dataset.suggest) send(t.dataset.suggest);
@@ -600,6 +836,7 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("keydown", e => {
   if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-edit][tabindex]")) { e.preventDefault(); openForm(e.target.dataset.edit, e.target.dataset.id); }
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-company][tabindex]")) { e.preventDefault(); currentCompany = e.target.dataset.company; go("entreprise"); }
   if (e.key === "Enter" && !e.shiftKey && e.target.id === "chatInput") { e.preventDefault(); $("#composer").requestSubmit(); }
 });
 document.addEventListener("submit", e => {
@@ -608,8 +845,16 @@ document.addEventListener("submit", e => {
 });
 document.addEventListener("change", e => {
   if (e.target.id === "finMonth") { finMonth = e.target.value; render(); }
+  if (e.target.id === "clientFilter") { clientFilter = e.target.value; render(); }
+  if (e.target.id === "voiceToggle") { voiceOn = e.target.checked; try { localStorage.setItem("jarvis-voice", voiceOn ? "1" : "0"); } catch (_) {} if (voiceOn) speak("Mode vocal activé. À votre service."); else stopSpeaking(); }
   if (e.target.id === "currency" && db) db.doc("settings/main").set({ ...S.settings, currency: e.target.value }).catch(toastErr);
 });
+async function advance(id) {
+  const x = S.clients.find(c => c.id === id); if (!x || !db) return;
+  const i = STAGE_ORDER.indexOf(stageOf(x)), next = STAGE_ORDER[i + 1];
+  if (!next || !OPEN_STAGES.includes(stageOf(x))) return;
+  try { await db.doc("clients/" + id).update({ stage: next, ...(next === "gagne" ? { wonDate: today() } : {}) }); } catch (err) { toastErr(err); }
+}
 let clearArmed = false;
 async function clearChat(btn) {
   if (!db || !S.chat.length) return;
@@ -626,7 +871,7 @@ render();
   db = await c.use("db");
   if (!db) { offline = true; $("#status").textContent = "Données indisponibles"; render(); return; }
   $("#status").textContent = "Synchronisé";
-  for (const col of COLS) db.collection(col).onSnapshot(snap => { S[col] = snap.docs.map(d => ({ id: d.id, ...d.data() })); render(); }, () => { $("#status").textContent = "Erreur de synchronisation"; });
+  for (const col of COLS) db.collection(col).onSnapshot(snap => { S[col] = snap.docs.map(d => ({ id: d.id, ...d.data() })); S.loaded[col] = true; render(); }, () => { $("#status").textContent = "Erreur de synchronisation"; });
   db.collection("chat").orderBy("ts", "desc").limit(80).onSnapshot(snap => { S.chat = snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse(); if (view === "jarvis") updateChat(); });
   db.doc("settings/main").onSnapshot(snap => { if (snap.exists) S.settings = { currency: "EUR", ...snap.data() }; render(); });
   sample = await c.use("sample");
