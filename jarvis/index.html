@@ -213,6 +213,9 @@ td.amt, th.amt { text-align: right; }
 .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; color: var(--muted); }
 .toggle input { accent-color: var(--accent); }
 
+.voice-pick { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.voice-pick select { background: var(--bg2); border: 1px solid var(--line); color: var(--accent); padding: 4px 8px; max-width: 220px; font-family: var(--font-data); font-size: 13px; }
+
 /* Bouton Démarrer Jarvis */
 .btn.start[aria-pressed="true"] { background: linear-gradient(180deg, rgba(255, 77, 99, .95), rgba(190, 30, 55, .95)); border-color: var(--bad); color: #fff; box-shadow: 0 0 18px rgba(255, 77, 99, .6); }
 .fab { position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 20; display: flex; align-items: center; gap: 10px;
@@ -626,7 +629,8 @@ function vJarvis() {
     <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <span class="orb-label" id="orbLabel">${esc(orbText())}</span>
     <button type="button" class="btn primary start" data-convo aria-pressed="false">Démarrer Jarvis</button>
-    <label class="toggle" for="voiceToggle"><input type="checkbox" id="voiceToggle" ${voiceOn ? "checked" : ""}> Jarvis parle à voix haute</label></div>
+    <label class="toggle" for="voiceToggle"><input type="checkbox" id="voiceToggle" ${voiceOn ? "checked" : ""}> Jarvis parle à voix haute</label>
+    <span class="voice-pick"><label for="voiceSel" class="eyebrow">Voix</label><select id="voiceSel">${voiceOptions()}</select><button type="button" class="btn small" id="voiceTest">Tester</button></span></div>
   <div class="msgs" id="msgs" aria-live="polite"></div>
   <div class="suggest" id="suggest">${["Fais le point sur ma situation financière", "Crée un objectif : fonds d'urgence de 5 000 € d'ici décembre", "J'ai reçu 1 200 € d'un client aujourd'hui", "Aide-moi à planifier ma prochaine entreprise", "Quelles dépenses puis-je réduire ?"].map(s => `<button type="button" data-suggest="${esc(s)}">${esc(s)}</button>`).join("")}</div>
   <form class="composer" id="composer"><button type="button" class="mic" id="micBtn" aria-pressed="${orbState === "listening"}" aria-label="Parler à Jarvis" title="Parler à Jarvis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg></button><textarea id="chatInput" rows="1" placeholder="${sample ? "Écris à Jarvis… (Entrée pour envoyer)" : "Jarvis sera disponible une fois la page ouverte sur claude.ai"}" aria-label="Message pour Jarvis"></textarea><button class="btn primary" type="submit" id="sendBtn">Envoyer</button></form></div>`;
@@ -815,9 +819,28 @@ function setOrb(s) {
   updateConvoUi();
 }
 function speakable(t) { return String(t).replace(/[*#_`>•|]/g, "").replace(/^\s*[-–]\s*/gm, "").replace(/\n+/g, ". ").replace(/\.\s*\./g, ".").slice(0, 2000); }
+/* Voix masculines françaises, de la plus naturelle à la plus basique (Edge, macOS/iOS, Windows, Android) */
+const MALE_RANK = [/henri/i, /r[ée]my/i, /thomas/i, /daniel/i, /nicolas/i, /antoine/i, /jean|mathieu|guillaume|alain|fabrice|jerome|jérôme|olivier/i, /paul/i, /claude/i, /x-frd|x-frb|x-cad/i, /\bmale\b|homme|masculin/i];
+const FEMALE = /am[ée]lie|audrey|aur[ée]lie|marie|virginie|julie|denise|[ée]loise|vivienne|sylvie|hortense|c[ée]line|chantal|josephine|brigitte|coralie|jacqueline|yvette|x-fra|x-frc|female|femme|google/i;
+let voicePref = "";
+try { voicePref = localStorage.getItem("jarvis-voice-name") || ""; } catch (e) {}
+function frVoices() { try { return speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang)); } catch (e) { return []; } }
+function isMale(v) { return !!v && !FEMALE.test(v.name + " " + v.voiceURI) && MALE_RANK.some(r => r.test(v.name + " " + v.voiceURI)); }
+function rankMale(v) { const s = v.name + " " + v.voiceURI; const i = MALE_RANK.findIndex(r => r.test(s)); return (i < 0 ? 99 : i) - (/natural|online|enhanced|premium|neural/i.test(s) ? .5 : 0) + (/^fr-fr/i.test(v.lang) ? 0 : .2); }
 function frVoice() {
-  try { const vs = speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang)); return vs.find(v => /google|thomas|daniel|paul|henri|male|homme/i.test(v.name)) || vs[0] || null; } catch (e) { return null; }
+  const vs = frVoices(); if (!vs.length) return null;
+  if (voicePref) { const p = vs.find(v => v.name === voicePref); if (p) return p; }
+  const males = vs.filter(isMale).sort((a, b) => rankMale(a) - rankMale(b));
+  return males[0] || vs[0];
 }
+function voiceOptions() {
+  const vs = frVoices(), cur = frVoice();
+  if (!vs.length) return `<option value="">Voix par défaut</option>`;
+  const males = vs.filter(isMale).sort((a, b) => rankMale(a) - rankMale(b)), others = vs.filter(v => !isMale(v));
+  const opt = v => `<option value="${esc(v.name)}" ${cur && v.name === cur.name ? "selected" : ""}>${esc(v.name.replace(/Microsoft |Online \(Natural\) |- French \((France|Canada|Belgium|Switzerland)\)/g, "").trim())}</option>`;
+  return (males.length ? `<optgroup label="Voix d'homme">${males.map(opt).join("")}</optgroup>` : "") + (others.length ? `<optgroup label="Autres voix">${others.map(opt).join("")}</optgroup>` : "");
+}
+try { speechSynthesis.onvoiceschanged = () => { const s = $("#voiceSel"); if (s) s.innerHTML = voiceOptions(); }; } catch (e) {}
 function speak(text, done) {
   let called = false;
   const finish = () => { if (called) return; called = true; if (orbState === "speaking") setOrb(""); if (done) done(); };
@@ -826,8 +849,9 @@ function speak(text, done) {
     speechSynthesis.cancel();
     const said = speakable(text);
     const u = new SpeechSynthesisUtterance(said);
-    u.lang = "fr-FR"; u.rate = 1.03; u.pitch = 0.9;
-    const v = frVoice(); if (v) u.voice = v;
+    const v = frVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "fr-FR";
+    // Voix d'homme : ton posé à la Jarvis. Sinon, on grave la voix disponible.
+    u.rate = 0.98; u.pitch = isMale(v) ? 0.92 : 0.7;
     u.onstart = () => setOrb("speaking");
     u.onend = u.onerror = finish;
     speechSynthesis.speak(u);
@@ -949,13 +973,14 @@ async function makeBriefing() {
 /* ---------- Événements ---------- */
 function go(v) { view = v; try { history.replaceState(null, "", "#" + v); } catch (e) {} render(); window.scrollTo(0, 0); }
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-convo],[data-view],[data-new],[data-edit],[data-suggest],[data-company],[data-advance],[data-plan],#briefBtn,#clearChat,#micBtn,#orb");
+  const t = e.target.closest("[data-convo],[data-view],[data-new],[data-edit],[data-suggest],[data-company],[data-advance],[data-plan],#briefBtn,#clearChat,#micBtn,#orb,#voiceTest");
   if (!t) return;
   if (t.hasAttribute("data-convo")) { if (convo) stopConvo(false); else startConvo(); }
   else if (t.dataset.advance) advance(t.dataset.advance);
   else if (t.dataset.plan) makePlan(t.dataset.plan);
   else if (t.dataset.company) { currentCompany = t.dataset.company; go("entreprise"); }
   else if (t.id === "micBtn") listen();
+  else if (t.id === "voiceTest") { voiceOn = true; try { localStorage.setItem("jarvis-voice", "1"); } catch (_) {} const vt = $("#voiceToggle"); if (vt) vt.checked = true; speak("Bonsoir. Ici Jarvis. Tous les systèmes sont opérationnels."); }
   else if (t.id === "orb") stopSpeaking();
   else if (t.dataset.view) go(t.dataset.view);
   else if (t.dataset.new) openForm(t.dataset.new);
@@ -975,6 +1000,7 @@ document.addEventListener("submit", e => {
 });
 document.addEventListener("change", e => {
   if (e.target.id === "finMonth") { finMonth = e.target.value; render(); }
+  if (e.target.id === "voiceSel") { voicePref = e.target.value; try { localStorage.setItem("jarvis-voice-name", voicePref); } catch (_) {} voiceOn = true; try { localStorage.setItem("jarvis-voice", "1"); } catch (_) {} const vt = $("#voiceToggle"); if (vt) vt.checked = true; speak("Voix sélectionnée. Je suis prêt."); }
   if (e.target.id === "clientFilter") { clientFilter = e.target.value; render(); }
   if (e.target.id === "voiceToggle") { voiceOn = e.target.checked; try { localStorage.setItem("jarvis-voice", voiceOn ? "1" : "0"); } catch (_) {} if (voiceOn) speak("Mode vocal activé. À votre service."); else stopSpeaking(); }
   if (e.target.id === "currency" && db) db.doc("settings/main").set({ ...S.settings, currency: e.target.value }).catch(toastErr);
