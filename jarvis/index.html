@@ -64,7 +64,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .clock { font-family: var(--font-data); font-size: 22px; color: var(--accent); text-shadow: var(--glow); letter-spacing: .06em; }
 .who::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--good); box-shadow: 0 0 8px var(--good); margin-right: 6px; vertical-align: 1px; }
 
-main { padding-block: 26px 48px; padding-inline: 32px; min-width: 0; max-width: 1240px; width: 100%; }
+main { padding-block: 26px 96px; padding-inline: 32px; min-width: 0; max-width: 1240px; width: 100%; }
 .head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
 .head h2 { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: .08em; text-transform: uppercase; margin: 0; text-wrap: balance; color: var(--ink); text-shadow: 0 0 18px rgba(58, 214, 255, .35); }
 .head p { margin: 4px 0 0; color: var(--muted); }
@@ -213,6 +213,17 @@ td.amt, th.amt { text-align: right; }
 .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; color: var(--muted); }
 .toggle input { accent-color: var(--accent); }
 
+/* Bouton Démarrer Jarvis */
+.btn.start[aria-pressed="true"] { background: linear-gradient(180deg, rgba(255, 77, 99, .95), rgba(190, 30, 55, .95)); border-color: var(--bad); color: #fff; box-shadow: 0 0 18px rgba(255, 77, 99, .6); }
+.fab { position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 20; display: flex; align-items: center; gap: 10px;
+  padding: 6px 18px 6px 6px; border: 1px solid var(--accent); border-radius: 40px; background: rgba(3, 14, 24, .92); color: var(--accent); cursor: pointer;
+  font-family: var(--font-display); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; box-shadow: 0 0 22px rgba(58, 214, 255, .35); backdrop-filter: blur(6px); }
+.fab .reactor { width: 46px; height: 46px; }
+.fab:hover { box-shadow: 0 0 32px rgba(58, 214, 255, .6); }
+.fab[data-on="1"] { border-color: var(--bad); color: var(--bad); box-shadow: 0 0 26px rgba(255, 77, 99, .45); }
+.fab[data-state="listening"] .reactor circle { stroke: var(--bad); }
+.fab[data-state="thinking"] .reactor circle { stroke: var(--gold); }
+
 /* Séquence de démarrage */
 .boot { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: grid; place-items: center; pointer-events: none; opacity: 0; visibility: hidden; }
 .boot-in { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-inline: 16px; text-align: center; }
@@ -255,6 +266,8 @@ select option { background: var(--bg2); color: var(--ink); }
   .board, .pipe { grid-template-columns: minmax(0, 1fr); }
   .chat { height: calc(100vh - 210px); }
   .orb { width: 64px; height: 64px; }
+  .fab { padding: 4px; right: 14px; } .fab .fab-label { display: none; }
+  main { padding-block-end: 90px; }
   .head h2 { font-size: 20px; }
   .kpi .val { font-size: 21px; }
 }
@@ -309,6 +322,8 @@ select option { background: var(--bg2); color: var(--ink); }
   </aside>
   <main id="main"></main>
 </div>
+
+<button type="button" class="fab" id="fab" data-convo aria-pressed="false" title="Démarrer une conversation vocale avec Jarvis"><span class="reactor-slot"></span><span class="fab-label">Démarrer Jarvis</span></button>
 
 <dialog id="dlg"><form id="dlgForm" method="dialog"></form></dialog>
 
@@ -384,6 +399,8 @@ function renderNav() {
 }
 function render() {
   renderNav();
+  const fab = $("#fab"); if (fab) fab.hidden = view === "jarvis";
+  updateConvoUi();
   $("#currency").value = S.settings.currency || "EUR";
   const m = $("#main");
   const keepScroll = view === "jarvis" ? null : window.scrollY;
@@ -391,8 +408,9 @@ function render() {
   if (offline) html += `<div class="notice">Les données ne sont pas disponibles dans cet aperçu. Ouvre la page sur claude.ai en étant connecté pour enregistrer tes objectifs et parler à Jarvis.</div>`;
   if (view === "entreprise" && !S.companies.some(c => c.id === currentCompany)) view = S.loaded.companies ? "entreprises" : view;
   html += ({ accueil: vHome, objectifs: vGoals, projets: vProjects, entreprises: vCompanies, entreprise: vCompany, clients: vClients, finances: vFinances, jarvis: vJarvis })[view]();
-  if (view === "jarvis" && m.querySelector("#chatInput")) { updateChat(); return; }
+  if (view === "jarvis" && m.querySelector("#chatInput")) { updateChat(); updateConvoUi(); return; }
   m.innerHTML = html;
+  updateConvoUi();
   if (view === "jarvis") { updateChat(); $("#chatInput")?.focus(); }
   if (keepScroll != null) window.scrollTo(0, keepScroll);
 }
@@ -424,7 +442,7 @@ function vHome() {
   const goals = [...S.goals].filter(g => !goalInfo(g).done).sort((a, b) => (a.deadline || "9999").localeCompare(b.deadline || "9999")).slice(0, 4);
   const hour = new Date().getHours();
   const hello = hour < 5 ? "Bonne nuit" : hour < 18 ? "Bonjour" : "Bonsoir";
-  return head(hello + (S.settings.name ? ", " + S.settings.name : ""), "Voici où en sont tes objectifs, tes projets et ton argent.", `<button type="button" class="btn primary" data-view="jarvis">Parler à Jarvis</button>`) + `
+  return head(hello + (S.settings.name ? ", " + S.settings.name : ""), "Voici où en sont tes objectifs, tes projets et ton argent.", `<button type="button" class="btn primary start" data-convo aria-pressed="false">Démarrer Jarvis</button>`) + `
   <div class="kpis">
     <div class="kpi"><span class="eyebrow">Résultat du mois</span><span class="val num ${cur.net >= 0 ? "pos" : "neg"}">${money(cur.net, true)}</span><span class="sub">Mois dernier : <span class="num">${money(prev.net, true)}</span></span></div>
     <div class="kpi"><span class="eyebrow">Revenus du mois</span><span class="val num">${money(cur.inc, true)}</span><span class="sub">Dépenses : <span class="num">${money(cur.exp, true)}</span></span></div>
@@ -607,6 +625,7 @@ function vJarvis() {
   <div class="chat-top"><div class="orb" id="orb" data-state="${orbState}" title="Toucher pour interrompre Jarvis">${reactor()}</div>
     <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <span class="orb-label" id="orbLabel">${esc(orbText())}</span>
+    <button type="button" class="btn primary start" data-convo aria-pressed="false">Démarrer Jarvis</button>
     <label class="toggle" for="voiceToggle"><input type="checkbox" id="voiceToggle" ${voiceOn ? "checked" : ""}> Jarvis parle à voix haute</label></div>
   <div class="msgs" id="msgs" aria-live="polite"></div>
   <div class="suggest" id="suggest">${["Fais le point sur ma situation financière", "Crée un objectif : fonds d'urgence de 5 000 € d'ici décembre", "J'ai reçu 1 200 € d'un client aujourd'hui", "Aide-moi à planifier ma prochaine entreprise", "Quelles dépenses puis-je réduire ?"].map(s => `<button type="button" data-suggest="${esc(s)}">${esc(s)}</button>`).join("")}</div>
@@ -785,44 +804,86 @@ function buildMessages(history, question) {
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recog = null, micBlocked = false;
 function orbText() {
-  return orbState === "listening" ? "Je vous écoute…" : orbState === "thinking" ? "Analyse en cours…" : orbState === "speaking" ? "Jarvis parle… (touchez l'orbe pour l'arrêter)" : sample ? "À votre service. Appuyez sur le micro ou écrivez." : "Jarvis sera disponible une fois la page ouverte sur claude.ai.";
+  if (convo && micBlocked && !orbState) return "Mode conversation : dictez avec le micro de votre clavier, je réponds à voix haute.";
+  return orbState === "listening" ? (convo ? "Je vous écoute… (dites « stop » pour arrêter)" : "Je vous écoute…") : convo && !orbState ? "Mode conversation actif." : orbState === "thinking" ? "Analyse en cours…" : orbState === "speaking" ? "Jarvis parle… (touchez l'orbe pour l'arrêter)" : sample ? "À votre service. Appuyez sur le micro ou écrivez." : "Jarvis sera disponible une fois la page ouverte sur claude.ai.";
 }
 function setOrb(s) {
   orbState = s;
   const o = $("#orb"); if (o) o.dataset.state = s;
   const l = $("#orbLabel"); if (l) l.textContent = orbText();
   const m = $("#micBtn"); if (m) m.setAttribute("aria-pressed", s === "listening");
+  updateConvoUi();
 }
 function speakable(t) { return String(t).replace(/[*#_`>•|]/g, "").replace(/^\s*[-–]\s*/gm, "").replace(/\n+/g, ". ").replace(/\.\s*\./g, ".").slice(0, 2000); }
 function frVoice() {
   try { const vs = speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang)); return vs.find(v => /google|thomas|daniel|paul|henri|male|homme/i.test(v.name)) || vs[0] || null; } catch (e) { return null; }
 }
-function speak(text) {
-  if (!voiceOn || !("speechSynthesis" in window) || !text) return;
+function speak(text, done) {
+  let called = false;
+  const finish = () => { if (called) return; called = true; if (orbState === "speaking") setOrb(""); if (done) done(); };
+  if (!voiceOn || !("speechSynthesis" in window) || !text) { setTimeout(finish, 0); return; }
   try {
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(speakable(text));
+    const said = speakable(text);
+    const u = new SpeechSynthesisUtterance(said);
     u.lang = "fr-FR"; u.rate = 1.03; u.pitch = 0.9;
     const v = frVoice(); if (v) u.voice = v;
     u.onstart = () => setOrb("speaking");
-    u.onend = u.onerror = () => { if (orbState === "speaking") setOrb(""); };
+    u.onend = u.onerror = finish;
     speechSynthesis.speak(u);
-  } catch (e) {}
+    setTimeout(finish, 3000 + said.length * 85); // filet de sécurité si le navigateur ne signale pas la fin
+  } catch (e) { setTimeout(finish, 0); }
+}
+
+/* Mode conversation : Jarvis écoute, répond, puis se remet à écouter tout seul */
+let convo = false;
+const STOP_WORDS = /^(stop|stoppe|arr[êe]te|arr[êe]te[- ]toi|au revoir|bonne nuit|c'est tout|merci c'est tout|pause|silence)\b/i;
+function startConvo() {
+  if (!sample) { alertBox("Jarvis sera disponible une fois la page ouverte sur claude.ai."); return; }
+  convo = true; voiceOn = true; try { localStorage.setItem("jarvis-voice", "1"); } catch (e) {}
+  if (view !== "jarvis") go("jarvis"); else render();
+  beep(520, .12); setTimeout(() => beep(780, .12), 130);
+  const h = new Date().getHours();
+  speak((h < 5 ? "Bonne nuit" : h < 18 ? "Bonjour" : "Bonsoir") + ". Tous les systèmes sont en ligne. Je vous écoute.", listenLoop);
+}
+function stopConvo(sayBye) {
+  convo = false;
+  if (recog) { try { recog.abort(); } catch (e) {} recog = null; }
+  if (sayBye) speak("Très bien. Je reste à votre disposition."); else stopSpeaking();
+  setOrb(""); render();
+}
+function listenLoop() {
+  if (convo && micBlocked) { $("#chatInput")?.focus(); return; }
+  if (convo && !busy && !recog) setTimeout(() => { if (convo && !busy && !recog) startListening(); }, 250); }
+function updateConvoUi() {
+  document.querySelectorAll("[data-convo]").forEach(b => { b.setAttribute("aria-pressed", convo); const l = b.querySelector(".fab-label") || b; l.textContent = convo ? "Arrêter Jarvis" : "Démarrer Jarvis"; });
+  const f = $("#fab"); if (f) { f.dataset.on = convo ? "1" : ""; f.dataset.state = orbState; }
 }
 function stopSpeaking() { try { speechSynthesis.cancel(); } catch (e) {} if (orbState === "speaking") setOrb(""); }
+const MIC_HELP = "Le micro est bloqué dans cette page. Jarvis reste en mode conversation : utilise la dictée de ton clavier (icône micro) pour lui parler, il te répondra à voix haute.";
 function listen() {
+  if (convo) { stopConvo(false); return; }
   if (orbState === "listening" && recog) { try { recog.stop(); } catch (e) {} return; }
-  stopSpeaking();
-  if (!SR || micBlocked) { alertBox("Le micro n'est pas accessible dans cette page. Astuce : touche la zone de texte puis l'icône micro de ton clavier (dictée) pour parler à Jarvis, il te répondra à voix haute."); $("#chatInput")?.focus(); return; }
   if (!voiceOn) { voiceOn = true; try { localStorage.setItem("jarvis-voice", "1"); } catch (e) {} const t = $("#voiceToggle"); if (t) t.checked = true; }
+  startListening();
+}
+function startListening() {
+  stopSpeaking();
+  if (!SR || micBlocked) { alertBox(MIC_HELP); $("#chatInput")?.focus(); return; }
   let heard = "";
   try {
     recog = new SR(); recog.lang = "fr-FR"; recog.interimResults = true; recog.continuous = false;
     recog.onresult = e => { heard = Array.from(e.results).map(r => r[0].transcript).join(""); const i = $("#chatInput"); if (i) i.value = heard; };
-    recog.onerror = e => { if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") { micBlocked = true; alertBox("Le micro est bloqué ici. Utilise la dictée de ton clavier (icône micro) : Jarvis te répondra quand même à voix haute."); } };
-    recog.onend = () => { recog = null; setOrb(""); const v = heard.trim(); if (v) { const i = $("#chatInput"); if (i) i.value = ""; send(v); } };
-    recog.start(); setOrb("listening");
-  } catch (e) { micBlocked = true; setOrb(""); alertBox("Le micro n'a pas pu démarrer. Utilise la dictée de ton clavier."); }
+    recog.onerror = e => { if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") { micBlocked = true; alertBox(MIC_HELP); $("#chatInput")?.focus(); } };
+    recog.onend = () => {
+      recog = null; if (orbState === "listening") setOrb("");
+      const v = heard.trim(); const i = $("#chatInput"); if (i && v) i.value = "";
+      if (v && convo && STOP_WORDS.test(v)) { stopConvo(true); return; }
+      if (v) send(v);
+      else if (convo && !micBlocked) listenLoop(); // silence : on continue d'écouter
+    };
+    recog.start(); setOrb("listening"); beep(980, .04);
+  } catch (e) { recog = null; micBlocked = true; setOrb(""); alertBox(MIC_HELP); }
 }
 
 async function makePlan(id) {
@@ -862,12 +923,13 @@ async function send(text) {
     const answer = (res.text || "").trim() || "C'est fait.";
     for (const t of toolLog) await db.collection("chat").add({ role: "tool", content: t, ts: Date.now() });
     await db.collection("chat").add({ role: "assistant", content: answer, ts: Date.now() + 1 });
-    setOrb(""); speak(answer);
+    setOrb(""); speak(answer, () => { if (convo) listenLoop(); });
   } catch (e) {
     const msg = e && e.code === "not_granted" ? "Tu n'as pas autorisé Jarvis à utiliser Claude. Autorise-le depuis le menu Permissions de la page."
       : e && e.code === "rate_limited" ? "Trop de demandes d'un coup. Attends une minute et réessaie."
       : "Je n'ai pas pu répondre (" + ((e && e.message) || "erreur inconnue") + "). Réessaie.";
     try { await db.collection("chat").add({ role: "assistant", content: msg, ts: Date.now() }); } catch (_) {}
+    if (convo) speak(msg, listenLoop);
     if (e && e.code === "not_granted") sample = null;
   } finally { busy = false; pending = null; if (orbState === "thinking") setOrb(""); render(); }
 }
@@ -887,9 +949,10 @@ async function makeBriefing() {
 /* ---------- Événements ---------- */
 function go(v) { view = v; try { history.replaceState(null, "", "#" + v); } catch (e) {} render(); window.scrollTo(0, 0); }
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-view],[data-new],[data-edit],[data-suggest],[data-company],[data-advance],[data-plan],#briefBtn,#clearChat,#micBtn,#orb");
+  const t = e.target.closest("[data-convo],[data-view],[data-new],[data-edit],[data-suggest],[data-company],[data-advance],[data-plan],#briefBtn,#clearChat,#micBtn,#orb");
   if (!t) return;
-  if (t.dataset.advance) advance(t.dataset.advance);
+  if (t.hasAttribute("data-convo")) { if (convo) stopConvo(false); else startConvo(); }
+  else if (t.dataset.advance) advance(t.dataset.advance);
   else if (t.dataset.plan) makePlan(t.dataset.plan);
   else if (t.dataset.company) { currentCompany = t.dataset.company; go("entreprise"); }
   else if (t.id === "micBtn") listen();
