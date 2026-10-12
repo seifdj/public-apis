@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#03080f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script src="local-runtime.js"></script>
+</head>
+<body>
+<title>Jarvis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap">
+<style>
+/* Layout: HUD holographique — rail de commande à gauche, panneaux translucides cerclés de repères d'angle sur une grille animée */
+:root {
+  --bg: #03080f;
+  --bg2: #071422;
+  --surface: rgba(10, 32, 52, .55);
+  --sunken: rgba(58, 214, 255, .07);
+  --line: rgba(58, 214, 255, .22);
+  --ink: #d6f4ff;
+  --muted: #6fa3bd;
+  --accent: #3ad6ff;
+  --accent-soft: rgba(58, 214, 255, .14);
+  --glow: 0 0 12px rgba(58, 214, 255, .55);
+  --gold: #ffb547;
+  --good: #3cf2a8;
+  --good-soft: rgba(60, 242, 168, .14);
+  --warn: #ffb547;
+  --warn-soft: rgba(255, 181, 71, .14);
+  --bad: #ff4d63;
+  --bad-soft: rgba(255, 77, 99, .15);
+  --font-display: "Orbitron", "Rajdhani", system-ui, sans-serif;
+  --font-body: "Rajdhani", "Segoe UI", system-ui, sans-serif;
+  --font-data: "Share Tech Mono", ui-monospace, Menlo, monospace;
+  --radius: 4px;
+  --cut: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: radial-gradient(1200px 700px at 75% 85%, rgba(58, 214, 255, .10), transparent 60%), radial-gradient(900px 600px at 10% 0%, rgba(255, 181, 71, .05), transparent 60%), var(--bg);
+  color: var(--ink); font-family: var(--font-body); font-size: 16px; font-weight: 500; line-height: 1.45;
+}
+body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: linear-gradient(rgba(58, 214, 255, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(58, 214, 255, .045) 1px, transparent 1px);
+  background-size: 44px 44px; mask-image: radial-gradient(ellipse at center, #000 40%, transparent 85%); }
+body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 3;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .018) 0 1px, transparent 1px 3px); }
+#hud { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; box-shadow: var(--glow); }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+
+.app { position: relative; z-index: 1; display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: 100%; }
+.rail { background: linear-gradient(180deg, rgba(7, 24, 40, .85), rgba(3, 10, 18, .85)); border-right: 1px solid var(--line); box-shadow: inset -1px 0 18px rgba(58, 214, 255, .08);
+  padding: 22px 14px; display: flex; flex-direction: column; gap: 22px; position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; backdrop-filter: blur(6px); }
+.brand { display: flex; align-items: center; gap: 10px; padding-inline: 4px; }
+.brand .reactor { width: 42px; height: 42px; flex: none; }
+.brand h1 { font-family: var(--font-display); font-size: 17px; letter-spacing: .28em; margin: 0; color: var(--accent); text-shadow: var(--glow); }
+.brand small { display: block; font-family: var(--font-data); font-size: 10px; letter-spacing: .12em; color: var(--muted); }
+.nav { display: flex; flex-direction: column; gap: 3px; }
+.nav button { all: unset; cursor: pointer; padding: 8px 12px; color: var(--muted); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 13px;
+  display: flex; justify-content: space-between; align-items: center; border-left: 2px solid transparent; transition: color .2s, background .2s, border-color .2s; }
+.nav button:hover { color: var(--ink); background: var(--sunken); border-left-color: var(--line); }
+.nav button[aria-current="page"] { color: var(--accent); background: linear-gradient(90deg, var(--accent-soft), transparent); border-left-color: var(--accent); text-shadow: var(--glow); }
+.nav button:focus-visible { outline: 1px solid var(--accent); }
+.nav .count { font-family: var(--font-data); font-size: 12px; }
+.rail-foot { margin-top: auto; font-size: 12px; color: var(--muted); padding-inline: 4px; display: flex; flex-direction: column; gap: 6px; font-family: var(--font-data); }
+.rail-foot select { background: var(--bg2); border: 1px solid var(--line); padding: 4px 6px; color: var(--accent); }
+.clock { font-family: var(--font-data); font-size: 22px; color: var(--accent); text-shadow: var(--glow); letter-spacing: .06em; }
+.who::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--good); box-shadow: 0 0 8px var(--good); margin-right: 6px; vertical-align: 1px; }
+
+main { padding-block: 26px 96px; padding-inline: 32px; min-width: 0; max-width: 1240px; width: 100%; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+.head h2 { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: .08em; text-transform: uppercase; margin: 0; text-wrap: balance; color: var(--ink); text-shadow: 0 0 18px rgba(58, 214, 255, .35); }
+.head p { margin: 4px 0 0; color: var(--muted); }
+.eyebrow { text-transform: uppercase; letter-spacing: .18em; font-size: 11px; font-weight: 700; color: var(--accent); font-family: var(--font-data); }
+
+.btn { border: 1px solid var(--line); background: rgba(58, 214, 255, .06); padding: 7px 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; cursor: pointer; clip-path: var(--cut); transition: background .2s, box-shadow .2s, color .2s; }
+.btn:hover { background: var(--accent-soft); color: var(--accent); box-shadow: var(--glow); }
+.btn.primary { background: linear-gradient(180deg, rgba(58, 214, 255, .9), rgba(20, 150, 200, .9)); border-color: var(--accent); color: #021019; }
+.btn.primary:hover { color: #021019; box-shadow: 0 0 22px rgba(58, 214, 255, .8); }
+.btn.danger { color: var(--bad); border-color: rgba(255, 77, 99, .4); }
+.btn.small { padding: 3px 10px; font-size: 11px; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; box-shadow: none; }
+
+/* Repères d'angle holographiques */
+.panel, .kpi, .company, .chat { position: relative; }
+.panel::before, .kpi::before, .company::before, .chat::before { content: ""; position: absolute; inset: -1px; pointer-events: none;
+  background: linear-gradient(var(--accent), var(--accent)) 0 0 / 14px 2px, linear-gradient(var(--accent), var(--accent)) 0 0 / 2px 14px,
+    linear-gradient(var(--accent), var(--accent)) 100% 0 / 14px 2px, linear-gradient(var(--accent), var(--accent)) 100% 0 / 2px 14px,
+    linear-gradient(var(--accent), var(--accent)) 0 100% / 14px 2px, linear-gradient(var(--accent), var(--accent)) 0 100% / 2px 14px,
+    linear-gradient(var(--accent), var(--accent)) 100% 100% / 14px 2px, linear-gradient(var(--accent), var(--accent)) 100% 100% / 2px 14px;
+  background-repeat: no-repeat; filter: drop-shadow(0 0 4px rgba(58, 214, 255, .8)); }
+
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; overflow: hidden; backdrop-filter: blur(4px); }
+.kpi::after { content: ""; position: absolute; top: 0; bottom: 0; width: 40%; left: -60%; pointer-events: none; background: linear-gradient(90deg, transparent, rgba(58, 214, 255, .10), transparent); }
+.kpi .val { font-family: var(--font-data); font-size: 26px; color: var(--accent); text-shadow: var(--glow); }
+.kpi .sub { font-size: 13px; color: var(--muted); }
+.pos { color: var(--good) !important; text-shadow: 0 0 10px rgba(60, 242, 168, .5); } .neg { color: var(--bad) !important; text-shadow: 0 0 10px rgba(255, 77, 99, .5); }
+
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; }
+.panel { background: var(--surface); border: 1px solid var(--line); padding: 16px 18px; min-width: 0; display: flex; flex-direction: column; gap: 12px; backdrop-filter: blur(4px); box-shadow: inset 0 0 30px rgba(58, 214, 255, .04); }
+.panel h3 { margin: 0; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); font-family: var(--font-display); font-weight: 500; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+
+.goal { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px dashed var(--line); cursor: pointer; }
+.goal:first-of-type { border-top: 0; }
+.goal-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.goal-title { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.bar { height: 6px; background: rgba(58, 214, 255, .08); border: 1px solid var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, rgba(58, 214, 255, .4), var(--accent)); box-shadow: var(--glow); }
+.bar i.done { background: linear-gradient(90deg, rgba(60, 242, 168, .4), var(--good)); }
+.goal-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border: 1px solid currentColor; background: transparent; color: var(--muted); white-space: nowrap; }
+.chip::before { content: ""; width: 6px; height: 6px; background: currentColor; box-shadow: 0 0 6px currentColor; }
+.chip.en_cours, .chip.active, .chip.contacte { color: var(--accent); }
+.chip.termine, .chip.gagne { color: var(--good); }
+.chip.pause, .chip.late, .chip.devis { color: var(--warn); }
+.chip.idee, .chip.projet, .chip.prospect { color: var(--muted); }
+.chip.perdu { color: var(--bad); }
+
+.list { display: flex; flex-direction: column; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px dashed var(--line); cursor: pointer; }
+.row:first-child { border-top: 0; }
+.row .main { min-width: 0; display: flex; flex-direction: column; }
+.row .main strong { overflow-wrap: anywhere; }
+.row .main small { color: var(--muted); overflow-wrap: anywhere; }
+
+.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.col { background: rgba(58, 214, 255, .04); border: 1px solid var(--line); padding: 10px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.col h4 { margin: 2px 4px 4px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+.card { background: rgba(3, 12, 22, .75); border: 1px solid var(--line); border-left: 2px solid var(--accent); padding: 9px 11px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; transition: box-shadow .2s, transform .2s; }
+.card:hover { box-shadow: var(--glow); transform: translateX(2px); }
+.card:hover strong, .row:hover .main strong, .goal:hover .goal-title { color: var(--accent); text-shadow: var(--glow); }
+.card small { color: var(--muted); overflow-wrap: anywhere; }
+
+.companies { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.company { background: var(--surface); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: box-shadow .25s; backdrop-filter: blur(4px); }
+.company:hover { box-shadow: 0 0 24px rgba(58, 214, 255, .25), inset 0 0 24px rgba(58, 214, 255, .06); }
+.company h4 { margin: 0; font-family: var(--font-display); font-weight: 700; letter-spacing: .06em; font-size: 15px; text-transform: uppercase; overflow-wrap: anywhere; }
+.company dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 14px; }
+.company dt { color: var(--muted); } .company dd { margin: 0; text-align: right; color: var(--accent); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--accent); font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--line); font-family: var(--font-data); }
+td { padding: 9px 10px; border-bottom: 1px dashed var(--line); }
+tbody tr { cursor: pointer; } tbody tr:hover { background: var(--sunken); }
+td.amt, th.amt { text-align: right; }
+
+.chart svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 0 4px rgba(58, 214, 255, .25)); }
+.chart text { fill: var(--muted); font-family: var(--font-data); font-size: 10px; }
+.legend { display: flex; gap: 14px; font-size: 11px; color: var(--muted); letter-spacing: .06em; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; background: var(--c); box-shadow: 0 0 6px var(--c); }
+
+.empty { color: var(--muted); font-size: 15px; padding: 8px 0; }
+.empty button { margin-top: 8px; }
+.notice { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); padding: 10px 14px; font-size: 15px; margin-bottom: 16px; }
+
+/* Chat */
+.chat { display: flex; flex-direction: column; height: calc(100vh - 150px); min-height: 460px; background: var(--surface); border: 1px solid var(--line); backdrop-filter: blur(4px); }
+.msgs { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.msg { max-width: 75ch; padding: 10px 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.user { align-self: flex-end; background: var(--accent-soft); border: 1px solid var(--accent); color: var(--ink); clip-path: var(--cut); }
+.msg.assistant { align-self: flex-start; background: rgba(3, 12, 22, .7); border-left: 2px solid var(--accent); }
+.msg.assistant::before { content: "JARVIS"; display: block; font-family: var(--font-data); font-size: 10px; letter-spacing: .2em; color: var(--accent); margin-bottom: 2px; }
+.msg.tool { align-self: flex-start; font-size: 12px; color: var(--good); padding: 2px 4px; font-family: var(--font-data); }
+.composer { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); align-items: center; }
+.composer textarea { flex: 1; resize: none; border: 1px solid var(--line); background: rgba(3, 12, 22, .8); padding: 9px 12px; min-height: 44px; max-height: 140px; }
+.suggest { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 12px; }
+.suggest button { border: 1px solid var(--line); background: transparent; padding: 4px 12px; font-size: 13px; cursor: pointer; color: var(--muted); clip-path: var(--cut); }
+.suggest button:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.quick { display: flex; gap: 8px; }
+.quick input { flex: 1; min-width: 0; border: 1px solid var(--line); background: rgba(3, 12, 22, .8); padding: 8px 12px; }
+.brief { white-space: pre-wrap; font-size: 15px; }
+
+/* Fiche entreprise & pipeline */
+.crumb { all: unset; cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.crumb:hover { color: var(--accent); }
+.pipe { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.pipe .col h4 small { color: var(--muted); font-weight: 500; }
+.card .card-foot { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 2px; }
+.adv { border: 1px solid var(--line); background: transparent; padding: 1px 8px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; color: var(--muted); }
+.adv:hover { color: var(--accent); border-color: var(--accent); box-shadow: var(--glow); }
+.due { color: var(--warn); font-weight: 700; }
+.services { display: flex; flex-wrap: wrap; gap: 6px; }
+.services span { border: 1px solid var(--accent); color: var(--accent); background: var(--accent-soft); padding: 3px 10px; font-size: 13px; font-weight: 700; letter-spacing: .04em; clip-path: var(--cut); }
+.contact { font-family: var(--font-data); font-size: 12px; user-select: all; }
+
+/* Réacteur ARK */
+.reactor { display: block; overflow: visible; }
+.reactor circle, .reactor path { fill: none; stroke: var(--accent); }
+.reactor .r-out { stroke-width: 1.5; opacity: .5; }
+.reactor .r-dash { stroke-width: 3; stroke-dasharray: 4 6; opacity: .8; }
+.reactor .r-arc { stroke-width: 2.5; stroke-dasharray: 60 30 20 30; opacity: .9; }
+.reactor .r-seg rect { fill: rgba(58, 214, 255, .55); stroke: none; }
+.reactor .r-core { fill: #e9fbff; stroke: var(--accent); stroke-width: 3; filter: drop-shadow(0 0 6px var(--accent)) drop-shadow(0 0 14px var(--accent)); }
+.reactor .r-ring { stroke-width: 1; opacity: .6; }
+.reactor g, .reactor circle { transform-box: view-box; transform-origin: 50px 50px; }
+.chat-top { display: flex; align-items: center; gap: 18px; padding: 14px 18px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.orb { width: 92px; height: 92px; flex: none; cursor: pointer; }
+.orb .reactor { width: 100%; height: 100%; }
+.orb[data-state="listening"] .reactor circle, .orb[data-state="listening"] .reactor path { stroke: var(--bad); }
+.orb[data-state="listening"] .r-seg rect { fill: rgba(255, 77, 99, .6); }
+.orb[data-state="listening"] .r-core { stroke: var(--bad); filter: drop-shadow(0 0 8px var(--bad)) drop-shadow(0 0 18px var(--bad)); }
+.orb[data-state="thinking"] .reactor circle, .orb[data-state="thinking"] .reactor path { stroke: var(--gold); }
+.orb[data-state="thinking"] .r-core { stroke: var(--gold); filter: drop-shadow(0 0 8px var(--gold)); }
+.orb-label { font-family: var(--font-data); font-size: 14px; letter-spacing: .06em; color: var(--accent); flex: 1; min-width: 160px; text-shadow: var(--glow); }
+.orb-label::after { content: "_"; margin-left: 2px; }
+.wave { display: flex; gap: 3px; align-items: center; height: 28px; }
+.wave i { width: 3px; height: 6px; background: var(--accent); box-shadow: var(--glow); }
+.mic { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--accent); background: var(--accent-soft); cursor: pointer; display: grid; place-items: center; flex: none; box-shadow: var(--glow); }
+.mic svg { width: 20px; height: 20px; fill: var(--accent); }
+.mic[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); box-shadow: 0 0 18px var(--bad); }
+.mic[aria-pressed="true"] svg { fill: #fff; }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; color: var(--muted); }
+.toggle input { accent-color: var(--accent); }
+
+.voice-pick { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.voice-pick select { background: var(--bg2); border: 1px solid var(--line); color: var(--accent); padding: 4px 8px; max-width: 220px; font-family: var(--font-data); font-size: 13px; }
+
+/* Bouton Démarrer Jarvis */
+.btn.start[aria-pressed="true"] { background: linear-gradient(180deg, rgba(255, 77, 99, .95), rgba(190, 30, 55, .95)); border-color: var(--bad); color: #fff; box-shadow: 0 0 18px rgba(255, 77, 99, .6); }
+.fab { position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 20; display: flex; align-items: center; gap: 10px;
+  padding: 6px 18px 6px 6px; border: 1px solid var(--accent); border-radius: 40px; background: rgba(3, 14, 24, .92); color: var(--accent); cursor: pointer;
+  font-family: var(--font-display); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; box-shadow: 0 0 22px rgba(58, 214, 255, .35); backdrop-filter: blur(6px); }
+.fab .reactor { width: 46px; height: 46px; }
+.fab:hover { box-shadow: 0 0 32px rgba(58, 214, 255, .6); }
+.fab[data-on="1"] { border-color: var(--bad); color: var(--bad); box-shadow: 0 0 26px rgba(255, 77, 99, .45); }
+.fab[data-state="listening"] .reactor circle { stroke: var(--bad); }
+.fab[data-state="thinking"] .reactor circle { stroke: var(--gold); }
+
+/* Séquence de démarrage */
+.boot { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: grid; place-items: center; pointer-events: none; opacity: 0; visibility: hidden; }
+.boot-in { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-inline: 16px; text-align: center; }
+.boot .reactor { width: 140px; height: 140px; }
+.boot-title { font-family: var(--font-display); font-size: 28px; letter-spacing: .5em; color: var(--accent); text-shadow: var(--glow); padding-left: .5em; }
+.boot-lines { font-family: var(--font-data); font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; min-height: 80px; }
+
+/* Formulaires */
+dialog { border: 1px solid var(--accent); background: rgba(5, 18, 30, .96); color: var(--ink); padding: 0; width: min(500px, calc(100vw - 32px)); box-shadow: 0 0 40px rgba(58, 214, 255, .3); }
+dialog::backdrop { background: rgba(1, 5, 10, .7); backdrop-filter: blur(3px); }
+dialog form { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+dialog h3 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); text-shadow: var(--glow); }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-family: var(--font-data); }
+.field input, .field select, .field textarea { border: 1px solid var(--line); background: rgba(3, 12, 22, .9); padding: 8px 10px; width: 100%; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: var(--glow); outline: none; }
+.field .hint { font-size: 12px; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.actions .spacer { flex: 1; }
+select option { background: var(--bg2); color: var(--ink); }
+
+@media (max-width: 1000px) {
+  .pipe { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 10px 16px; gap: 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .brand .reactor { width: 32px; height: 32px; }
+  .nav { flex-direction: row; overflow-x: auto; gap: 4px; width: 100%; order: 3; }
+  .nav button { white-space: nowrap; padding: 6px 10px; border-left: 0; border-bottom: 2px solid transparent; }
+  .nav button[aria-current="page"] { border-bottom-color: var(--accent); }
+  .nav .count { display: none; }
+  .rail-foot { margin: 0 0 0 auto; flex-direction: row; align-items: center; }
+  .rail-foot .who, .rail-foot .eyebrow { display: none; }
+  .clock { font-size: 15px; }
+  main { padding-inline: 16px; padding-block: 18px 40px; }
+  .board, .pipe { grid-template-columns: minmax(0, 1fr); }
+  .chat { height: calc(100vh - 210px); }
+  .orb { width: 64px; height: 64px; }
+  .fab { padding: 4px; right: 14px; } .fab .fab-label { display: none; }
+  main { padding-block-end: 90px; }
+  .head h2 { font-size: 20px; }
+  .kpi .val { font-size: 21px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bar i { transition: width .6s ease; }
+  .reactor .r-dash { animation: spin 14s linear infinite; }
+  .reactor .r-arc { animation: spin 7s linear infinite reverse; }
+  .reactor .r-seg { animation: spin 22s linear infinite; }
+  .reactor .r-core { animation: pulse 2.6s ease-in-out infinite; }
+  .orb[data-state="speaking"] .r-dash { animation-duration: 2s; }
+  .orb[data-state="speaking"] .r-arc { animation-duration: 1.2s; }
+  .orb[data-state="speaking"] .r-core { animation: pulse .45s ease-in-out infinite; }
+  .orb[data-state="thinking"] .r-arc { animation-duration: .9s; }
+  .orb[data-state="thinking"] .r-seg { animation-duration: 3s; }
+  .orb[data-state="listening"] .r-core { animation: pulse .7s ease-in-out infinite; }
+  .orb[data-state="speaking"] ~ .wave i, .orb[data-state="listening"] ~ .wave i { animation: eq .5s ease-in-out infinite alternate; }
+  .wave i:nth-child(2) { animation-delay: .1s !important; } .wave i:nth-child(3) { animation-delay: .25s !important; } .wave i:nth-child(4) { animation-delay: .05s !important; } .wave i:nth-child(5) { animation-delay: .3s !important; } .wave i:nth-child(6) { animation-delay: .15s !important; }
+  .kpi::after { animation: sweep 7s ease-in-out infinite; }
+  .kpi:nth-child(2)::after { animation-delay: 1.2s; } .kpi:nth-child(3)::after { animation-delay: 2.4s; } .kpi:nth-child(4)::after { animation-delay: 3.6s; }
+  .orb-label::after { animation: blink 1s steps(1) infinite; }
+  .boot { visibility: visible; animation: bootOut .5s ease 2.1s forwards; opacity: 1; }
+  .boot-lines span { opacity: 0; animation: lineIn .3s ease forwards; }
+  .boot-lines span:nth-child(1) { animation-delay: .3s; } .boot-lines span:nth-child(2) { animation-delay: .7s; } .boot-lines span:nth-child(3) { animation-delay: 1.1s; } .boot-lines span:nth-child(4) { animation-delay: 1.5s; color: var(--accent); }
+  .boot .reactor { animation: zoomIn 1s ease both; }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
+@keyframes eq { from { height: 4px; } to { height: 26px; } }
+@keyframes sweep { 0%, 70% { left: -60%; } 100% { left: 130%; } }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes bootOut { to { opacity: 0; visibility: hidden; } }
+@keyframes lineIn { to { opacity: 1; } }
+@keyframes zoomIn { from { transform: scale(.4) rotate(-90deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rise { from { transform: translateY(6px); } to { transform: none; } }
+</style>
+
+<canvas id="hud" aria-hidden="true"></canvas>
+<div class="boot" aria-hidden="true"><div class="boot-in"><span class="reactor-slot"></span><div class="boot-title">J.A.R.V.I.S.</div>
+  <div class="boot-lines"><span>Initialisation des systèmes…</span><span>Synchronisation des données financières…</span><span>Modules entreprises et clients en ligne</span><span>À votre service.</span></div></div></div>
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><span class="reactor-slot"></span><div><h1>JARVIS</h1><small>SYSTÈME PERSONNEL</small></div></div>
+    <nav class="nav" id="nav" aria-label="Sections"></nav>
+    <div class="rail-foot">
+      <span class="clock" id="clock" aria-label="Heure">--:--:--</span>
+      <label for="currency" class="eyebrow">Devise</label>
+      <select id="currency">
+        <option>EUR</option><option>TND</option><option>USD</option><option>CAD</option><option>CHF</option><option>MAD</option><option>GBP</option>
+      </select>
+      <span class="who" id="status">Connexion…</span>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<button type="button" class="fab" id="fab" data-convo aria-pressed="false" title="Démarrer une conversation vocale avec Jarvis"><span class="reactor-slot"></span><span class="fab-label">Démarrer Jarvis</span></button>
+
+<dialog id="dlg"><form id="dlgForm" method="dialog"></form></dialog>
+
+<script>
+const SECTIONS = [
+  { id: "accueil", label: "Tableau de bord" },
+  { id: "objectifs", label: "Objectifs", col: "goals" },
+  { id: "projets", label: "Projets", col: "projects" },
+  { id: "entreprises", label: "Entreprises", col: "companies" },
+  { id: "clients", label: "Clients", col: "clients" },
+  { id: "finances", label: "Finances", col: "transactions" },
+  { id: "jarvis", label: "Parler à Jarvis" },
+];
+const PROJECT_STATUS = { idee: "Idée", en_cours: "En cours", pause: "En pause", termine: "Terminé" };
+const COMPANY_STATUS = { active: "Active", projet: "Future / en projet" };
+const STAGES = { prospect: "Prospect", contacte: "Contacté", devis: "Devis envoyé", gagne: "Client gagné", perdu: "Perdu" };
+const STAGE_ORDER = Object.keys(STAGES);
+const OPEN_STAGES = ["prospect", "contacte", "devis"];
+const COLS = ["goals", "projects", "companies", "transactions", "clients"];
+
+const S = { goals: [], projects: [], companies: [], transactions: [], clients: [], chat: [], settings: { currency: "EUR" }, loaded: {} };
+let db = null, sample = null, ready = false, offline = false;
+let view = "accueil";
+let currentCompany = null;
+let orbState = "";
+let voiceOn = false;
+try { voiceOn = localStorage.getItem("jarvis-voice") === "1"; } catch (e) {}
+let pending = null; // réponse de Jarvis en cours d'écriture
+let busy = false;
+let briefing = "";
+
+try { const h = (location.hash || "").slice(1); if (SECTIONS.some(s => s.id === h)) view = h; } catch (e) {}
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const n = v => { const x = Number(v); return Number.isFinite(x) ? x : 0; };
+function money(v, compact) {
+  try {
+    return new Intl.NumberFormat("fr-FR", { style: "currency", currency: S.settings.currency || "EUR", maximumFractionDigits: compact ? 0 : 2, notation: compact && Math.abs(v) >= 100000 ? "compact" : "standard" }).format(n(v));
+  } catch (e) { return n(v).toFixed(2) + " " + S.settings.currency; }
+}
+const today = () => new Date().toISOString().slice(0, 10);
+const monthKey = d => String(d || "").slice(0, 7);
+function fmtDate(d) { if (!d) return ""; const x = new Date(d + "T12:00:00"); return isNaN(x) ? d : x.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }); }
+function monthsUntil(d) {
+  if (!d) return null; const t = new Date(d + "T12:00:00"); if (isNaN(t)) return null;
+  const now = new Date(); return (t.getFullYear() - now.getFullYear()) * 12 + (t.getMonth() - now.getMonth()) + (t.getDate() >= now.getDate() ? 0 : -1);
+}
+function companyName(id) { const c = S.companies.find(c => c.id === id); return c ? c.name : ""; }
+
+/* ---------- Calculs ---------- */
+function monthTotals(key) {
+  let inc = 0, exp = 0;
+  for (const t of S.transactions) if (monthKey(t.date) === key) { const a = n(t.amount); if (a >= 0) inc += a; else exp += -a; }
+  return { inc, exp, net: inc - exp };
+}
+function lastMonths(k) {
+  const out = [], d = new Date(); d.setDate(1);
+  for (let i = k - 1; i >= 0; i--) { const x = new Date(d.getFullYear(), d.getMonth() - i, 1); out.push(x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0")); }
+  return out;
+}
+function goalInfo(g) {
+  const target = n(g.target), cur = n(g.current), pct = target > 0 ? Math.min(100, cur / target * 100) : 0;
+  const m = monthsUntil(g.deadline), left = Math.max(0, target - cur);
+  return { target, cur, pct, left, months: m, perMonth: left > 0 && m !== null ? left / Math.max(1, m) : 0, late: m !== null && m < 0 && left > 0, done: left <= 0 && target > 0 };
+}
+function totalBalance() { return S.transactions.reduce((s, t) => s + n(t.amount), 0); }
+
+/* ---------- Rendu ---------- */
+function renderNav() {
+  const navView = view === "entreprise" ? "entreprises" : view;
+  $("#nav").innerHTML = SECTIONS.map(s => `<button type="button" data-view="${s.id}" ${s.id === navView ? 'aria-current="page"' : ""}>${esc(s.label)}${s.col ? `<span class="count">${S[s.col].length}</span>` : ""}</button>`).join("");
+}
+function render() {
+  renderNav();
+  const fab = $("#fab"); if (fab) fab.hidden = view === "jarvis";
+  updateConvoUi();
+  $("#currency").value = S.settings.currency || "EUR";
+  const m = $("#main");
+  const keepScroll = view === "jarvis" ? null : window.scrollY;
+  let html = "";
+  if (offline) html += `<div class="notice">Les données ne sont pas disponibles dans cet aperçu. Ouvre la page sur claude.ai en étant connecté pour enregistrer tes objectifs et parler à Jarvis.</div>`;
+  if (view === "entreprise" && !S.companies.some(c => c.id === currentCompany)) view = S.loaded.companies ? "entreprises" : view;
+  html += ({ accueil: vHome, objectifs: vGoals, projets: vProjects, entreprises: vCompanies, entreprise: vCompany, clients: vClients, finances: vFinances, jarvis: vJarvis })[view]();
+  if (view === "jarvis" && m.querySelector("#chatInput")) { updateChat(); updateConvoUi(); return; }
+  m.innerHTML = html;
+  updateConvoUi();
+  if (view === "jarvis") { updateChat(); $("#chatInput")?.focus(); }
+  if (keepScroll != null) window.scrollTo(0, keepScroll);
+}
+function emptyState(text, type) {
+  return `<div class="empty">${esc(text)}${type ? `<div><button type="button" class="btn small" data-new="${type}">Ajouter</button></div>` : ""}</div>`;
+}
+function head(title, sub, btn) {
+  return `<div class="head"><div><div class="eyebrow">${esc(new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }))}</div><h2>${esc(title)}</h2>${sub ? `<p>${esc(sub)}</p>` : ""}</div>${btn || ""}</div>`;
+}
+
+function goalHtml(g) {
+  const i = goalInfo(g);
+  return `<div class="goal" data-edit="goals" data-id="${esc(g.id)}" tabindex="0" role="button">
+    <div class="goal-top"><span class="goal-title">${esc(g.title)}</span><span class="num">${money(i.cur, true)} / ${money(i.target, true)}</span></div>
+    <div class="bar" role="progressbar" aria-valuenow="${Math.round(i.pct)}" aria-valuemin="0" aria-valuemax="100"><i class="${i.done ? "done" : ""}" style="width:${i.pct.toFixed(1)}%"></i></div>
+    <div class="goal-meta">
+      <span class="num">${Math.round(i.pct)} %</span>
+      ${g.deadline ? `<span>Échéance ${esc(fmtDate(g.deadline))}</span>` : ""}
+      ${i.done ? `<span class="chip termine">Atteint</span>` : i.late ? `<span class="chip late">Échéance dépassée</span>` : i.perMonth ? `<span>À mettre de côté : <b class="num">${money(i.perMonth, true)}</b>/mois</span>` : ""}
+      ${g.category ? `<span>${esc(g.category)}</span>` : ""}
+    </div></div>`;
+}
+
+function vHome() {
+  const cur = monthTotals(lastMonths(1)[0]);
+  const prev = monthTotals(lastMonths(2)[0]);
+  const tTarget = S.goals.reduce((s, g) => s + n(g.target), 0), tCur = S.goals.reduce((s, g) => s + Math.min(n(g.current), n(g.target)), 0);
+  const active = S.projects.filter(p => p.status === "en_cours");
+  const goals = [...S.goals].filter(g => !goalInfo(g).done).sort((a, b) => (a.deadline || "9999").localeCompare(b.deadline || "9999")).slice(0, 4);
+  const hour = new Date().getHours();
+  const hello = hour < 5 ? "Bonne nuit" : hour < 18 ? "Bonjour" : "Bonsoir";
+  return head(hello + (S.settings.name ? ", " + S.settings.name : ""), "Voici où en sont tes objectifs, tes projets et ton argent.", `<button type="button" class="btn primary start" data-convo aria-pressed="false">Démarrer Jarvis</button>`) + `
+  <div class="kpis">
+    <div class="kpi"><span class="eyebrow">Résultat du mois</span><span class="val num ${cur.net >= 0 ? "pos" : "neg"}">${money(cur.net, true)}</span><span class="sub">Mois dernier : <span class="num">${money(prev.net, true)}</span></span></div>
+    <div class="kpi"><span class="eyebrow">Revenus du mois</span><span class="val num">${money(cur.inc, true)}</span><span class="sub">Dépenses : <span class="num">${money(cur.exp, true)}</span></span></div>
+    <div class="kpi"><span class="eyebrow">Objectifs financés</span><span class="val num">${tTarget ? Math.round(tCur / tTarget * 100) : 0} %</span><span class="sub"><span class="num">${money(tCur, true)}</span> sur <span class="num">${money(tTarget, true)}</span></span></div>
+    <div class="kpi"><span class="eyebrow">Projets en cours</span><span class="val num">${active.length}</span><span class="sub">${S.companies.filter(c => c.status === "active").length} entreprise(s) active(s), ${S.companies.filter(c => c.status !== "active").length} en projet</span></div>
+  </div>
+  <div class="grid2">
+    <div class="stack">
+      <section class="panel"><h3>Flux de trésorerie, 6 derniers mois <span class="legend"><span style="--c:var(--good)">Revenus</span><span style="--c:var(--bad)">Dépenses</span></span></h3><div class="chart">${cashChart()}</div></section>
+      <section class="panel"><h3>Objectifs prioritaires <button type="button" class="btn small" data-new="goals">+ Objectif</button></h3>
+        ${goals.length ? goals.map(goalHtml).join("") : emptyState("Aucun objectif en cours. Fixe un montant et une date, Jarvis calcule combien mettre de côté chaque mois.")}</section>
+    </div>
+    <div class="stack">
+      <section class="panel"><h3>Briefing de Jarvis <button type="button" class="btn small" id="briefBtn" ${sample && !busy ? "" : "disabled"}>${briefing ? "Actualiser" : "Générer"}</button></h3>
+        <div class="brief" id="brief">${briefing ? esc(briefing) : `<span class="empty">${sample ? "Demande à Jarvis un résumé de ta situation et les 3 actions prioritaires du jour." : "Jarvis sera disponible une fois la page ouverte sur claude.ai."}</span>`}</div>
+        <form class="quick" id="quickAsk"><input id="quickInput" placeholder="Pose une question à Jarvis…" aria-label="Question pour Jarvis" autocomplete="off"><button class="btn" type="submit">Envoyer</button></form>
+      </section>
+      <section class="panel"><h3>Relances clients <button type="button" class="btn small" data-view="clients">Tous les clients</button></h3>
+        <div class="list">${followUps().length ? followUps().slice(0, 6).map(clientRow).join("") : emptyState("Aucune relance prévue. Ajoute tes clients potentiels avec une date de prochaine action.", "clients")}</div>
+      </section>
+      <section class="panel"><h3>Projets en cours <button type="button" class="btn small" data-view="projets">Tout voir</button></h3>
+        <div class="list">${active.length ? active.slice(0, 6).map(p => `<div class="row" data-edit="projects" data-id="${esc(p.id)}" tabindex="0" role="button"><div class="main"><strong>${esc(p.name)}</strong><small>${esc(p.nextStep ? "Prochaine étape : " + p.nextStep : companyName(p.company) || "")}</small></div><span class="chip en_cours">En cours</span></div>`).join("") : emptyState("Aucun projet en cours.", "projects")}</div>
+      </section>
+    </div>
+  </div>`;
+}
+
+function cashChart() {
+  const ms = lastMonths(6), data = ms.map(monthTotals);
+  const max = Math.max(1, ...data.map(d => Math.max(d.inc, d.exp)));
+  const W = 560, H = 200, L = 52, B = 22, T = 10, cw = (W - L) / ms.length, bw = Math.min(22, cw / 3.2);
+  const y = v => T + (H - T - B) * (1 - v / max);
+  const ticks = [0, max / 2, max];
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Revenus et dépenses par mois">`;
+  for (const t of ticks) s += `<line x1="${L}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 6}" y="${y(t) + 3}" text-anchor="end">${esc(money(t, true))}</text>`;
+  data.forEach((d, i) => {
+    const cx = L + cw * i + cw / 2;
+    s += `<rect x="${cx - bw - 1}" y="${y(d.inc)}" width="${bw}" height="${Math.max(0, H - B - y(d.inc))}" rx="2" fill="var(--good)"><title>Revenus ${money(d.inc)}</title></rect>`;
+    s += `<rect x="${cx + 1}" y="${y(d.exp)}" width="${bw}" height="${Math.max(0, H - B - y(d.exp))}" rx="2" fill="var(--bad)"><title>Dépenses ${money(d.exp)}</title></rect>`;
+    const lab = new Date(ms[i] + "-15").toLocaleDateString("fr-FR", { month: "short" });
+    s += `<text x="${cx}" y="${H - 6}" text-anchor="middle">${esc(lab)}</text>`;
+  });
+  return s + `</svg>`;
+}
+
+function vGoals() {
+  const open = S.goals.filter(g => !goalInfo(g).done), done = S.goals.filter(g => goalInfo(g).done);
+  const perMonth = open.reduce((s, g) => s + goalInfo(g).perMonth, 0);
+  return head("Objectifs", perMonth ? `Pour tout atteindre à temps : ${money(perMonth, true)} à mettre de côté par mois.` : "Fixe un montant cible et une échéance pour chaque objectif.", `<button type="button" class="btn primary" data-new="goals">+ Nouvel objectif</button>`) +
+    `<div class="grid2"><section class="panel"><h3>En cours (${open.length})</h3>${open.length ? open.map(goalHtml).join("") : emptyState("Aucun objectif en cours.", "goals")}</section>
+     <section class="panel"><h3>Atteints (${done.length})</h3>${done.length ? done.map(goalHtml).join("") : emptyState("Tes objectifs atteints apparaîtront ici.")}</section></div>`;
+}
+
+function vProjects() {
+  const cols = Object.entries(PROJECT_STATUS).map(([k, label]) => {
+    const items = S.projects.filter(p => (p.status || "idee") === k);
+    return `<div class="col"><h4>${esc(label)} <span class="num">${items.length}</span></h4>${items.map(p => `<div class="card" data-edit="projects" data-id="${esc(p.id)}" tabindex="0" role="button"><strong>${esc(p.name)}</strong>${companyName(p.company) ? `<small>${esc(companyName(p.company))}</small>` : ""}${p.nextStep ? `<small>→ ${esc(p.nextStep)}</small>` : ""}${n(p.budget) ? `<small class="num">Budget ${money(p.budget, true)}</small>` : ""}</div>`).join("")}</div>`;
+  }).join("");
+  return head("Projets", "De l'idée à la réalisation. Clique sur un projet pour le modifier.", `<button type="button" class="btn primary" data-new="projects">+ Nouveau projet</button>`) + `<div class="board">${cols}</div>`;
+}
+
+function vCompanies() {
+  const card = c => {
+    const tx = S.transactions.filter(t => t.company === c.id);
+    const inc = tx.filter(t => n(t.amount) > 0).reduce((s, t) => s + n(t.amount), 0), exp = tx.filter(t => n(t.amount) < 0).reduce((s, t) => s - n(t.amount), 0);
+    const pr = S.projects.filter(p => p.company === c.id);
+    const open = S.clients.filter(x => x.company === c.id && OPEN_STAGES.includes(x.stage || "prospect")).length;
+    return `<div class="company" data-company="${esc(c.id)}" tabindex="0" role="button" aria-label="Ouvrir la fiche ${esc(c.name)}">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><h4>${esc(c.name)}</h4><span class="chip ${c.status === "active" ? "active" : "projet"}">${esc(COMPANY_STATUS[c.status] || "Future / en projet")}</span></div>
+      ${c.sector ? `<small style="color:var(--muted)">${esc(c.sector)}</small>` : ""}
+      <dl><dt>CA mensuel visé</dt><dd class="num">${n(c.monthlyRevenue) ? money(c.monthlyRevenue, true) : "—"}</dd>
+      <dt>Revenus enregistrés</dt><dd class="num">${money(inc, true)}</dd><dt>Dépenses enregistrées</dt><dd class="num">${money(exp, true)}</dd><dt>Projets</dt><dd class="num">${pr.length}</dd><dt>Clients potentiels</dt><dd class="num">${open}</dd></dl>
+      ${c.notes ? `<small style="color:var(--muted);overflow-wrap:anywhere">${esc(c.notes)}</small>` : ""}</div>`;
+  };
+  const act = S.companies.filter(c => c.status === "active"), fut = S.companies.filter(c => c.status !== "active");
+  return head("Entreprises", "Tes entreprises actuelles et celles que tu prépares. Ouvre une entreprise pour voir son tableau de bord.", `<button type="button" class="btn primary" data-new="companies">+ Nouvelle entreprise</button>`) +
+    `<div class="stack"><div><div class="eyebrow" style="margin-bottom:8px">Actives</div>${act.length ? `<div class="companies">${act.map(card).join("")}</div>` : emptyState("Aucune entreprise active.", "companies")}</div>
+     <div><div class="eyebrow" style="margin-bottom:8px">Futures / en projet</div>${fut.length ? `<div class="companies">${fut.map(card).join("")}</div>` : emptyState("Note ici les entreprises que tu veux créer.", "companies")}</div></div>`;
+}
+
+/* ---------- Clients & fiche entreprise ---------- */
+const stageOf = x => STAGES[x.stage] ? x.stage : "prospect";
+function followUps(companyId) {
+  return S.clients.filter(x => OPEN_STAGES.includes(stageOf(x)) && x.nextDate && (!companyId || x.company === companyId))
+    .sort((a, b) => String(a.nextDate).localeCompare(String(b.nextDate)));
+}
+function dueLabel(d) {
+  if (!d) return "";
+  const t = today();
+  return d < t ? `<span class="due">En retard (${esc(fmtDate(d))})</span>` : d === t ? `<span class="due">Aujourd'hui</span>` : esc(fmtDate(d));
+}
+function clientRow(x) {
+  return `<div class="row" data-edit="clients" data-id="${esc(x.id)}" tabindex="0" role="button"><div class="main"><strong>${esc(x.name)}</strong>
+    <small>${x.nextAction ? esc(x.nextAction) + " · " : ""}${dueLabel(x.nextDate)}${!currentCompany || view !== "entreprise" ? (companyName(x.company) ? " · " + esc(companyName(x.company)) : "") : ""}</small></div>
+    <span class="chip ${stageOf(x)}">${esc(STAGES[stageOf(x)])}</span></div>`;
+}
+function clientCard(x) {
+  const st = stageOf(x), i = STAGE_ORDER.indexOf(st), next = OPEN_STAGES.includes(st) ? STAGE_ORDER[i + 1] : null;
+  return `<div class="card" data-edit="clients" data-id="${esc(x.id)}" tabindex="0" role="button">
+    <strong>${esc(x.name)}</strong>
+    ${x.service ? `<small>${esc(x.service)}</small>` : ""}
+    ${x.nextAction || x.nextDate ? `<small>→ ${esc(x.nextAction || "Relancer")} ${x.nextDate ? "· " + dueLabel(x.nextDate) : ""}</small>` : ""}
+    <div class="card-foot"><span class="num">${n(x.value) ? money(x.value, true) : ""}</span>${next ? `<button type="button" class="adv" data-advance="${esc(x.id)}" title="Passer à « ${esc(STAGES[next])} »">${esc(STAGES[next])} →</button>` : ""}</div></div>`;
+}
+function pipeline(list) {
+  return `<div class="pipe">${STAGE_ORDER.map(st => {
+    const items = list.filter(x => stageOf(x) === st);
+    const val = items.reduce((s, x) => s + n(x.value), 0);
+    return `<div class="col"><h4>${esc(STAGES[st])} <small class="num">${items.length}${val ? " · " + money(val, true) : ""}</small></h4>${items.map(clientCard).join("")}</div>`;
+  }).join("")}</div>`;
+}
+function vCompany() {
+  const c = S.companies.find(x => x.id === currentCompany);
+  if (!c) return `<button type="button" class="crumb" data-view="entreprises">← Entreprises</button>` + emptyState("Chargement de l'entreprise…");
+  const tx = S.transactions.filter(t => t.company === c.id);
+  const mk = lastMonths(1)[0];
+  const monthInc = tx.filter(t => monthKey(t.date) === mk && n(t.amount) > 0).reduce((s, t) => s + n(t.amount), 0);
+  const inc = tx.filter(t => n(t.amount) > 0).reduce((s, t) => s + n(t.amount), 0), exp = tx.filter(t => n(t.amount) < 0).reduce((s, t) => s - n(t.amount), 0);
+  const cl = S.clients.filter(x => x.company === c.id);
+  const open = cl.filter(x => OPEN_STAGES.includes(stageOf(x))), won = cl.filter(x => stageOf(x) === "gagne"), lost = cl.filter(x => stageOf(x) === "perdu");
+  const pipeVal = open.reduce((s, x) => s + n(x.value), 0);
+  const conv = won.length + lost.length ? Math.round(won.length / (won.length + lost.length) * 100) : null;
+  const target = n(c.monthlyRevenue), pct = target ? Math.min(100, monthInc / target * 100) : 0;
+  const services = String(c.services || "").split(",").map(s => s.trim()).filter(Boolean);
+  const fu = followUps(c.id), pr = S.projects.filter(p => p.company === c.id);
+  const recent = [...tx].sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 6);
+  return `<button type="button" class="crumb" data-view="entreprises">← Entreprises</button>` +
+    head(c.name, [c.sector, COMPANY_STATUS[c.status] || ""].filter(Boolean).join(" · "), `<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-edit="companies" data-id="${esc(c.id)}">Modifier</button><button type="button" class="btn primary" data-new="clients">+ Client potentiel</button></div>`) + `
+  <div class="kpis">
+    <div class="kpi"><span class="eyebrow">CA du mois</span><span class="val num">${money(monthInc, true)}</span>${target ? `<div class="bar"><i class="${pct >= 100 ? "done" : ""}" style="width:${pct.toFixed(1)}%"></i></div><span class="sub">Objectif <span class="num">${money(target, true)}</span>/mois · ${Math.round(pct)} %</span>` : `<span class="sub">Fixe un CA mensuel visé dans « Modifier »</span>`}</div>
+    <div class="kpi"><span class="eyebrow">Pipeline ouvert</span><span class="val num">${money(pipeVal, true)}</span><span class="sub">${open.length} client(s) potentiel(s) en cours</span></div>
+    <div class="kpi"><span class="eyebrow">Clients gagnés</span><span class="val num">${won.length}</span><span class="sub">${conv === null ? "Taux de conversion : pas encore de données" : `Taux de conversion : <span class="num">${conv} %</span>`}</span></div>
+    <div class="kpi"><span class="eyebrow">Résultat cumulé</span><span class="val num ${inc - exp >= 0 ? "pos" : "neg"}">${money(inc - exp, true)}</span><span class="sub">Revenus <span class="num">${money(inc, true)}</span> · dépenses <span class="num">${money(exp, true)}</span></span></div>
+  </div>
+  <section class="panel" style="margin-bottom:16px"><h3>Clients potentiels <span class="eyebrow">Clique sur « → » pour faire avancer un client</span></h3>
+    ${cl.length ? pipeline(cl) : emptyState("Aucun client potentiel pour l'instant. Ajoute les personnes ou entreprises à démarcher, ou dis à Jarvis : « ajoute Mme Dupont comme prospect pour un ménage, 300 € ».", "clients")}</section>
+  <div class="grid2">
+    <div class="stack">
+      <section class="panel"><h3>Plan de développement <button type="button" class="btn small" id="planBtn" data-plan="${esc(c.id)}" ${sample && !busy ? "" : "disabled"}>${c.plan ? "Mettre à jour" : "Demander à Jarvis"}</button></h3>
+        <div class="brief" id="plan">${c.plan ? esc(c.plan) : `<span class="empty">Jarvis analyse tes services, tes clients et tes chiffres, puis te propose un plan concret pour faire grandir ${esc(c.name)}.</span>`}</div></section>
+      <section class="panel"><h3>Relances à faire</h3><div class="list">${fu.length ? fu.map(clientRow).join("") : emptyState("Aucune relance prévue.")}</div></section>
+    </div>
+    <div class="stack">
+      <section class="panel"><h3>Services proposés <button type="button" class="btn small" data-edit="companies" data-id="${esc(c.id)}">Modifier</button></h3>
+        ${services.length ? `<div class="services">${services.map(s => `<span>${esc(s)}</span>`).join("")}</div>` : emptyState("Liste tes services dans « Modifier » (séparés par des virgules).")}
+        ${c.notes ? `<small style="color:var(--muted);overflow-wrap:anywhere">${esc(c.notes)}</small>` : ""}</section>
+      <section class="panel"><h3>Projets <button type="button" class="btn small" data-new="projects">+ Projet</button></h3><div class="list">${pr.length ? pr.map(p => `<div class="row" data-edit="projects" data-id="${esc(p.id)}" tabindex="0" role="button"><div class="main"><strong>${esc(p.name)}</strong><small>${esc(p.nextStep || "")}</small></div><span class="chip ${esc(p.status || "idee")}">${esc(PROJECT_STATUS[p.status] || "Idée")}</span></div>`).join("") : emptyState("Aucun projet lié.")}</div></section>
+      <section class="panel"><h3>Dernières opérations <button type="button" class="btn small" data-new="transactions">+ Opération</button></h3><div class="list">${recent.length ? recent.map(t => `<div class="row" data-edit="transactions" data-id="${esc(t.id)}" tabindex="0" role="button"><div class="main"><strong>${esc(t.label)}</strong><small>${esc(fmtDate(t.date))}</small></div><span class="num ${n(t.amount) >= 0 ? "pos" : "neg"}">${money(t.amount)}</span></div>`).join("") : emptyState("Aucune opération rattachée.")}</div></section>
+    </div>
+  </div>`;
+}
+let clientFilter = "";
+function vClients() {
+  const list = S.clients.filter(x => !clientFilter || stageOf(x) === clientFilter).sort((a, b) => STAGE_ORDER.indexOf(stageOf(a)) - STAGE_ORDER.indexOf(stageOf(b)) || String(a.nextDate || "9").localeCompare(String(b.nextDate || "9")));
+  const open = S.clients.filter(x => OPEN_STAGES.includes(stageOf(x)));
+  return head("Clients", `${open.length} client(s) potentiel(s) en cours, pour ${money(open.reduce((s, x) => s + n(x.value), 0), true)} de chiffre d'affaires possible.`, `<button type="button" class="btn primary" data-new="clients">+ Client potentiel</button>`) +
+    `<section class="panel"><h3>Tous les clients <select id="clientFilter" aria-label="Filtrer par étape" style="border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:4px 8px;font-weight:500"><option value="">Toutes les étapes</option>${STAGE_ORDER.map(s => `<option value="${s}" ${s === clientFilter ? "selected" : ""}>${esc(STAGES[s])}</option>`).join("")}</select></h3>
+    ${list.length ? `<div class="table-wrap"><table><thead><tr><th>Client</th><th>Entreprise</th><th>Étape</th><th>Service</th><th class="amt">Montant</th><th>Prochaine action</th></tr></thead><tbody>${list.map(x => `<tr data-edit="clients" data-id="${esc(x.id)}" tabindex="0"><td><strong>${esc(x.name)}</strong>${x.phone || x.city ? `<br><small style="color:var(--muted)">${esc([x.phone, x.city].filter(Boolean).join(" · "))}</small>` : ""}</td><td>${esc(companyName(x.company))}</td><td><span class="chip ${stageOf(x)}">${esc(STAGES[stageOf(x)])}</span></td><td>${esc(x.service || "")}</td><td class="amt num">${n(x.value) ? money(x.value, true) : ""}</td><td>${esc(x.nextAction || "")}${x.nextDate ? `<br><small>${dueLabel(x.nextDate)}</small>` : ""}</td></tr>`).join("")}</tbody></table></div>` : emptyState("Aucun client pour l'instant.", "clients")}</section>`;
+}
+
+let finMonth = "";
+function vFinances() {
+  const months = [...new Set(S.transactions.map(t => monthKey(t.date)).filter(Boolean))].sort().reverse();
+  const list = S.transactions.filter(t => !finMonth || monthKey(t.date) === finMonth).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const inc = list.filter(t => n(t.amount) > 0).reduce((s, t) => s + n(t.amount), 0), exp = list.filter(t => n(t.amount) < 0).reduce((s, t) => s - n(t.amount), 0);
+  const cats = {}; list.filter(t => n(t.amount) < 0).forEach(t => { const k = t.category || "Autre"; cats[k] = (cats[k] || 0) - n(t.amount); });
+  const catList = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+  return head("Finances", `Solde cumulé de toutes les opérations : ${money(totalBalance())}`, `<button type="button" class="btn primary" data-new="transactions">+ Opération</button>`) + `
+  <div class="kpis"><div class="kpi"><span class="eyebrow">Revenus</span><span class="val num pos">${money(inc, true)}</span></div><div class="kpi"><span class="eyebrow">Dépenses</span><span class="val num neg">${money(exp, true)}</span></div>
+  <div class="kpi"><span class="eyebrow">Résultat</span><span class="val num ${inc - exp >= 0 ? "pos" : "neg"}">${money(inc - exp, true)}</span></div><div class="kpi"><span class="eyebrow">Taux d'épargne</span><span class="val num">${inc ? Math.round((inc - exp) / inc * 100) : 0} %</span></div></div>
+  <div class="grid2"><section class="panel"><h3>Opérations
+    <select id="finMonth" aria-label="Filtrer par mois" style="border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:4px 8px;font-weight:500"><option value="">Tous les mois</option>${months.map(m => `<option value="${m}" ${m === finMonth ? "selected" : ""}>${esc(new Date(m + "-15").toLocaleDateString("fr-FR", { month: "long", year: "numeric" }))}</option>`).join("")}</select></h3>
+    ${list.length ? `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th class="amt">Montant</th></tr></thead><tbody>${list.map(t => `<tr data-edit="transactions" data-id="${esc(t.id)}" tabindex="0"><td class="num">${esc(fmtDate(t.date))}</td><td>${esc(t.label)}${companyName(t.company) ? `<br><small style="color:var(--muted)">${esc(companyName(t.company))}</small>` : ""}</td><td>${esc(t.category || "")}</td><td class="amt num ${n(t.amount) >= 0 ? "pos" : "neg"}">${money(t.amount)}</td></tr>`).join("")}</tbody></table></div>` : emptyState("Aucune opération. Ajoute tes revenus et tes dépenses, ou dis simplement à Jarvis « j'ai dépensé 45 € en courses ».", "transactions")}
+  </section><section class="panel"><h3>Dépenses par catégorie</h3>${catList.length ? catList.map(([k, v]) => `<div class="goal" style="cursor:default"><div class="goal-top"><span>${esc(k)}</span><span class="num">${money(v, true)}</span></div><div class="bar"><i style="width:${(v / catList[0][1] * 100).toFixed(1)}%;background:var(--gold)"></i></div></div>`).join("") : emptyState("Pas encore de dépenses.")}</section></div>`;
+}
+
+function vJarvis() {
+  return head("Parler à Jarvis", "Jarvis connaît tes objectifs, projets, entreprises et finances. Il peut les créer et les mettre à jour pour toi.", `<button type="button" class="btn small" id="clearChat">Effacer la conversation</button>`) + `
+  <div class="chat">
+  <div class="chat-top"><div class="orb" id="orb" data-state="${orbState}" title="Toucher pour interrompre Jarvis">${reactor()}</div>
+    <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <span class="orb-label" id="orbLabel">${esc(orbText())}</span>
+    <button type="button" class="btn primary start" data-convo aria-pressed="false">Démarrer Jarvis</button>
+    <label class="toggle" for="voiceToggle"><input type="checkbox" id="voiceToggle" ${voiceOn ? "checked" : ""}> Jarvis parle à voix haute</label>
+    <span class="voice-pick"><label for="voiceSel" class="eyebrow">Voix</label><select id="voiceSel">${voiceOptions()}</select><button type="button" class="btn small" id="voiceTest">Tester</button></span></div>
+  <div class="msgs" id="msgs" aria-live="polite"></div>
+  <div class="suggest" id="suggest">${["Fais le point sur ma situation financière", "Crée un objectif : fonds d'urgence de 5 000 € d'ici décembre", "J'ai reçu 1 200 € d'un client aujourd'hui", "Aide-moi à planifier ma prochaine entreprise", "Quelles dépenses puis-je réduire ?"].map(s => `<button type="button" data-suggest="${esc(s)}">${esc(s)}</button>`).join("")}</div>
+  <form class="composer" id="composer"><button type="button" class="mic" id="micBtn" aria-pressed="${orbState === "listening"}" aria-label="Parler à Jarvis" title="Parler à Jarvis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg></button><textarea id="chatInput" rows="1" placeholder="${sample ? "Écris à Jarvis… (Entrée pour envoyer)" : "Jarvis sera disponible une fois la page ouverte sur claude.ai"}" aria-label="Message pour Jarvis"></textarea><button class="btn primary" type="submit" id="sendBtn">Envoyer</button></form></div>`;
+}
+function updateChat() {
+  const box = $("#msgs"); if (!box) return;
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  const items = S.chat.map(m => `<div class="msg ${m.role === "user" ? "user" : m.role === "tool" ? "tool" : "assistant"}">${esc(m.content)}</div>`);
+  if (pending) { pending.tools.forEach(t => items.push(`<div class="msg tool">${esc(t)}</div>`)); items.push(`<div class="msg assistant">${esc(pending.text || "Jarvis réfléchit…")}</div>`); }
+  box.innerHTML = items.length ? items.join("") : `<div class="empty" style="margin:auto;text-align:center;max-width:46ch">Bonjour, je suis Jarvis. Dis-moi tes objectifs, tes dépenses, tes idées d'entreprise : je les note, je fais les calculs et je t'aide à décider.</div>`;
+  $("#suggest").hidden = S.chat.length > 0 || !!pending;
+  $("#sendBtn").disabled = busy || !sample;
+  const ci = $("#chatInput"); if (ci) ci.placeholder = sample ? "Écris à Jarvis… (Entrée pour envoyer)" : "Jarvis sera disponible une fois la page ouverte sur claude.ai";
+  const ol = $("#orbLabel"); if (ol) ol.textContent = orbText();
+  if (atBottom || pending) box.scrollTop = box.scrollHeight;
+}
+
+/* ---------- Formulaires ---------- */
+const FORMS = {
+  goals: { title: "Objectif", fields: [
+    { k: "title", label: "Nom de l'objectif", req: true, ph: "Ex. Apport pour un appartement" },
+    { k: "target", label: "Montant cible", type: "number", req: true },
+    { k: "current", label: "Déjà mis de côté", type: "number" },
+    { k: "deadline", label: "Échéance", type: "date" },
+    { k: "category", label: "Catégorie", ph: "Épargne, entreprise, achat, investissement…" } ] },
+  projects: { title: "Projet", fields: [
+    { k: "name", label: "Nom du projet", req: true },
+    { k: "status", label: "Statut", type: "select", opts: PROJECT_STATUS },
+    { k: "company", label: "Entreprise", type: "company" },
+    { k: "nextStep", label: "Prochaine étape" },
+    { k: "budget", label: "Budget", type: "number" },
+    { k: "notes", label: "Notes", type: "textarea" } ] },
+  companies: { title: "Entreprise", fields: [
+    { k: "name", label: "Nom", req: true },
+    { k: "status", label: "Statut", type: "select", opts: COMPANY_STATUS },
+    { k: "sector", label: "Secteur d'activité" },
+    { k: "services", label: "Services proposés", ph: "Ex. ménage, jardinage, petits travaux", hint: "Sépare les services par des virgules." },
+    { k: "monthlyRevenue", label: "Chiffre d'affaires mensuel visé", type: "number" },
+    { k: "notes", label: "Notes", type: "textarea" } ] },
+  clients: { title: "Client", fields: [
+    { k: "name", label: "Nom du client ou de l'entreprise", req: true },
+    { k: "company", label: "Pour quelle entreprise", type: "company" },
+    { k: "stage", label: "Étape", type: "select", opts: STAGES },
+    { k: "service", label: "Service demandé" },
+    { k: "value", label: "Montant estimé", type: "number" },
+    { k: "phone", label: "Téléphone", type: "tel" },
+    { k: "email", label: "E-mail", type: "email" },
+    { k: "city", label: "Ville / quartier" },
+    { k: "source", label: "Comment il t'a connu", ph: "Bouche-à-oreille, Facebook, flyer…" },
+    { k: "nextAction", label: "Prochaine action", ph: "Appeler, envoyer le devis, passer voir…" },
+    { k: "nextDate", label: "Date de la prochaine action", type: "date" },
+    { k: "notes", label: "Notes", type: "textarea" } ] },
+  transactions: { title: "Opération", fields: [
+    { k: "label", label: "Libellé", req: true, ph: "Ex. Facture client, loyer, courses" },
+    { k: "amount", label: "Montant", type: "number", req: true, hint: "Positif pour un revenu, négatif pour une dépense (ex. -45)." },
+    { k: "date", label: "Date", type: "date" },
+    { k: "category", label: "Catégorie", ph: "Logement, alimentation, client, outils…" },
+    { k: "company", label: "Entreprise", type: "company" } ] },
+};
+let editing = null, confirmDel = false;
+function openForm(col, id) {
+  if (!db) return;
+  const spec = FORMS[col], item = id ? S[col].find(x => x.id === id) : null;
+  editing = { col, id: item ? id : null }; confirmDel = false;
+  const val = k => item ? item[k] ?? "" : (k === "date" ? today() : k === "status" ? (col === "companies" ? "projet" : "en_cours") : k === "stage" ? "prospect" : k === "company" && view === "entreprise" ? currentCompany : "");
+  const field = f => {
+    const id = "f_" + f.k, v = val(f.k);
+    let input;
+    if (f.type === "select") input = `<select id="${id}" name="${f.k}">${Object.entries(f.opts).map(([k, l]) => `<option value="${k}" ${k === v ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+    else if (f.type === "company") input = `<select id="${id}" name="${f.k}"><option value="">Aucune</option>${S.companies.map(c => `<option value="${esc(c.id)}" ${c.id === v ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>`;
+    else if (f.type === "textarea") input = `<textarea id="${id}" name="${f.k}" rows="3">${esc(v)}</textarea>`;
+    else input = `<input id="${id}" name="${f.k}" type="${f.type || "text"}" ${f.type === "number" ? 'step="any"' : ""} value="${esc(v)}" ${f.req ? "required" : ""} placeholder="${esc(f.ph || "")}">`;
+    return `<div class="field"><label for="${id}">${esc(f.label)}</label>${input}${f.hint ? `<span class="hint">${esc(f.hint)}</span>` : ""}</div>`;
+  };
+  $("#dlgForm").innerHTML = `<h3>${item ? "Modifier" : "Nouveau·elle"} : ${esc(spec.title.toLowerCase())}</h3>${spec.fields.map(field).join("")}
+    <div class="actions">${item ? `<button type="button" class="btn danger" id="delBtn">Supprimer</button>` : ""}<span class="spacer"></span><button type="button" class="btn" id="cancelBtn">Annuler</button><button type="submit" class="btn primary">Enregistrer</button></div>`;
+  $("#dlg").showModal();
+  setTimeout(() => $("#dlgForm input, #dlgForm select")?.focus(), 30);
+}
+function readForm() {
+  const spec = FORMS[editing.col], out = {};
+  for (const f of spec.fields) { const el = $("#f_" + f.k); let v = el.value; if (f.type === "number") v = v === "" ? 0 : Number(v); out[f.k] = v; }
+  return out;
+}
+$("#dlgForm").addEventListener("submit", async e => {
+  e.preventDefault(); if (!editing) return;
+  const data = readForm();
+  try {
+    if (editing.id) await db.doc(editing.col + "/" + editing.id).update(data);
+    else await db.collection(editing.col).add({ ...data, createdAt: Date.now() });
+    $("#dlg").close();
+  } catch (err) { toastErr(err); }
+});
+$("#dlgForm").addEventListener("click", async e => {
+  if (e.target.id === "cancelBtn") $("#dlg").close();
+  if (e.target.id === "delBtn") {
+    if (!confirmDel) { confirmDel = true; e.target.textContent = "Confirmer la suppression"; return; }
+    try { await db.doc(editing.col + "/" + editing.id).delete(); $("#dlg").close(); } catch (err) { toastErr(err); }
+  }
+});
+function toastErr(err) { alertBox((err && err.message) || "L'enregistrement a échoué. Réessaie dans un instant."); }
+function alertBox(msg) { const m = $("#main"); const d = document.createElement("div"); d.className = "notice"; d.textContent = msg; m.prepend(d); setTimeout(() => d.remove(), 6000); }
+
+/* ---------- Jarvis ---------- */
+function snapshotForAI() {
+  const cur = monthTotals(lastMonths(1)[0]);
+  return {
+    date_du_jour: today(), devise: S.settings.currency,
+    mois_en_cours: cur, six_derniers_mois: lastMonths(6).map(m => ({ mois: m, ...monthTotals(m) })), solde_cumule: totalBalance(),
+    objectifs: S.goals.map(g => { const i = goalInfo(g); return { id: g.id, titre: g.title, cible: i.target, actuel: i.cur, echeance: g.deadline || null, categorie: g.category || null, pourcentage: Math.round(i.pct), a_epargner_par_mois: Math.round(i.perMonth) }; }),
+    clients: S.clients.map(x => ({ id: x.id, nom: x.name, entreprise: companyName(x.company) || null, etape: stageOf(x), service: x.service || null, montant_estime: n(x.value), telephone: x.phone || null, ville: x.city || null, source: x.source || null, prochaine_action: x.nextAction || null, date_prochaine_action: x.nextDate || null, notes: x.notes || null })),
+    projets: S.projects.map(p => ({ id: p.id, nom: p.name, statut: p.status, entreprise: companyName(p.company) || null, prochaine_etape: p.nextStep || null, budget: n(p.budget), notes: p.notes || null })),
+    entreprises: S.companies.map(c => ({ id: c.id, nom: c.name, statut: c.status, secteur: c.sector || null, services: c.services || null, ca_mensuel_vise: n(c.monthlyRevenue), notes: c.notes || null })),
+    page_ouverte: view === "entreprise" ? "Fiche de l'entreprise " + companyName(currentCompany) : view,
+    operations_recentes: [...S.transactions].sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 60).map(t => ({ id: t.id, date: t.date, libelle: t.label, montant: n(t.amount), categorie: t.category || null, entreprise: companyName(t.company) || null })),
+  };
+}
+function findCompanyId(name) { if (!name) return ""; const c = S.companies.find(c => c.name.toLowerCase() === String(name).toLowerCase() || c.id === name); return c ? c.id : ""; }
+function clean(o) { const r = {}; for (const [k, v] of Object.entries(o)) if (v !== undefined && v !== null) r[k] = v; return r; }
+
+function makeTools(log) {
+  const add = async (col, data, label) => { const ref = await db.collection(col).add({ ...data, createdAt: Date.now() }); log(label); return { ok: true, id: ref.id }; };
+  const upd = async (col, id, data, label) => { if (!S[col].some(x => x.id === id)) throw new Error("Identifiant introuvable : " + id); await db.doc(col + "/" + id).update(clean(data)); log(label); return { ok: true }; };
+  return [
+    { name: "ajouter_objectif", description: "Crée un objectif financier (montant cible, montant déjà épargné, échéance AAAA-MM-JJ).",
+      inputSchema: { type: "object", properties: { titre: { type: "string" }, cible: { type: "number" }, actuel: { type: "number" }, echeance: { type: "string" }, categorie: { type: "string" } }, required: ["titre", "cible"] },
+      execute: i => add("goals", { title: i.titre, target: n(i.cible), current: n(i.actuel), deadline: i.echeance || "", category: i.categorie || "" }, "✓ Objectif créé : " + i.titre) },
+    { name: "modifier_objectif", description: "Met à jour un objectif existant par son id (ex. nouveau montant épargné).",
+      inputSchema: { type: "object", properties: { id: { type: "string" }, titre: { type: "string" }, cible: { type: "number" }, actuel: { type: "number" }, echeance: { type: "string" }, categorie: { type: "string" } }, required: ["id"] },
+      execute: i => upd("goals", i.id, { title: i.titre, target: i.cible, current: i.actuel, deadline: i.echeance, category: i.categorie }, "✓ Objectif mis à jour") },
+    { name: "ajouter_operation", description: "Enregistre une opération financière. Montant positif = revenu, négatif = dépense. Date AAAA-MM-JJ (aujourd'hui par défaut).",
+      inputSchema: { type: "object", properties: { libelle: { type: "string" }, montant: { type: "number" }, date: { type: "string" }, categorie: { type: "string" }, entreprise: { type: "string", description: "Nom de l'entreprise concernée, facultatif" } }, required: ["libelle", "montant"] },
+      execute: i => add("transactions", { label: i.libelle, amount: n(i.montant), date: i.date || today(), category: i.categorie || "", company: findCompanyId(i.entreprise) }, "✓ Opération enregistrée : " + i.libelle + " (" + money(i.montant) + ")") },
+    { name: "ajouter_projet", description: "Crée un projet. statut parmi idee, en_cours, pause, termine.",
+      inputSchema: { type: "object", properties: { nom: { type: "string" }, statut: { type: "string", enum: Object.keys(PROJECT_STATUS) }, entreprise: { type: "string" }, prochaine_etape: { type: "string" }, budget: { type: "number" }, notes: { type: "string" } }, required: ["nom"] },
+      execute: i => add("projects", { name: i.nom, status: i.statut || "idee", company: findCompanyId(i.entreprise), nextStep: i.prochaine_etape || "", budget: n(i.budget), notes: i.notes || "" }, "✓ Projet créé : " + i.nom) },
+    { name: "modifier_projet", description: "Met à jour un projet existant par son id.",
+      inputSchema: { type: "object", properties: { id: { type: "string" }, nom: { type: "string" }, statut: { type: "string", enum: Object.keys(PROJECT_STATUS) }, prochaine_etape: { type: "string" }, budget: { type: "number" }, notes: { type: "string" } }, required: ["id"] },
+      execute: i => upd("projects", i.id, { name: i.nom, status: i.statut, nextStep: i.prochaine_etape, budget: i.budget, notes: i.notes }, "✓ Projet mis à jour") },
+    { name: "ajouter_entreprise", description: "Ajoute une entreprise. statut : active (existe déjà) ou projet (future).",
+      inputSchema: { type: "object", properties: { nom: { type: "string" }, statut: { type: "string", enum: ["active", "projet"] }, secteur: { type: "string" }, services: { type: "string", description: "Services séparés par des virgules" }, ca_mensuel_vise: { type: "number" }, notes: { type: "string" } }, required: ["nom"] },
+      execute: i => add("companies", { name: i.nom, status: i.statut || "projet", sector: i.secteur || "", services: i.services || "", monthlyRevenue: n(i.ca_mensuel_vise), notes: i.notes || "" }, "✓ Entreprise ajoutée : " + i.nom) },
+    { name: "modifier_entreprise", description: "Met à jour une entreprise existante par son id.",
+      inputSchema: { type: "object", properties: { id: { type: "string" }, nom: { type: "string" }, statut: { type: "string", enum: ["active", "projet"] }, secteur: { type: "string" }, services: { type: "string" }, ca_mensuel_vise: { type: "number" }, notes: { type: "string" } }, required: ["id"] },
+      execute: i => upd("companies", i.id, { name: i.nom, status: i.statut, sector: i.secteur, services: i.services, monthlyRevenue: i.ca_mensuel_vise, notes: i.notes }, "✓ Entreprise mise à jour") },
+    { name: "ajouter_client", description: "Ajoute un client ou client potentiel (prospect) pour une entreprise. etape parmi prospect, contacte, devis, gagne, perdu. date_prochaine_action au format AAAA-MM-JJ.",
+      inputSchema: { type: "object", properties: { nom: { type: "string" }, entreprise: { type: "string", description: "Nom de l'entreprise de l'utilisateur concernée" }, etape: { type: "string", enum: STAGE_ORDER }, service: { type: "string" }, montant_estime: { type: "number" }, telephone: { type: "string" }, email: { type: "string" }, ville: { type: "string" }, source: { type: "string" }, prochaine_action: { type: "string" }, date_prochaine_action: { type: "string" }, notes: { type: "string" } }, required: ["nom"] },
+      execute: i => add("clients", { name: i.nom, company: findCompanyId(i.entreprise) || (view === "entreprise" ? currentCompany : ""), stage: i.etape || "prospect", service: i.service || "", value: n(i.montant_estime), phone: i.telephone || "", email: i.email || "", city: i.ville || "", source: i.source || "", nextAction: i.prochaine_action || "", nextDate: i.date_prochaine_action || "", notes: i.notes || "" }, "✓ Client ajouté : " + i.nom) },
+    { name: "modifier_client", description: "Met à jour un client existant par son id (étape, prochaine action, montant, notes…).",
+      inputSchema: { type: "object", properties: { id: { type: "string" }, nom: { type: "string" }, etape: { type: "string", enum: STAGE_ORDER }, service: { type: "string" }, montant_estime: { type: "number" }, telephone: { type: "string" }, email: { type: "string" }, ville: { type: "string" }, prochaine_action: { type: "string" }, date_prochaine_action: { type: "string" }, notes: { type: "string" } }, required: ["id"] },
+      execute: i => upd("clients", i.id, { name: i.nom, stage: i.etape, service: i.service, value: i.montant_estime, phone: i.telephone, email: i.email, city: i.ville, nextAction: i.prochaine_action, nextDate: i.date_prochaine_action, notes: i.notes }, "✓ Client mis à jour") },
+    { name: "supprimer", description: "Supprime un élément. Ne l'utilise que si l'utilisateur l'a demandé explicitement.",
+      inputSchema: { type: "object", properties: { type: { type: "string", enum: COLS }, id: { type: "string" } }, required: ["type", "id"] },
+      execute: async i => { if (!COLS.includes(i.type) || !S[i.type].some(x => x.id === i.id)) throw new Error("Élément introuvable"); await db.doc(i.type + "/" + i.id).delete(); log("✓ Élément supprimé"); return { ok: true }; } },
+  ];
+}
+const SYSTEM = `Tu es Jarvis, l'assistant personnel de l'utilisateur pour ses objectifs financiers, ses projets et ses entreprises (actuelles et futures).
+Tu réponds en français, de façon directe, chaleureuse et concrète, avec des chiffres précis. Pas de longs paragraphes : va à l'essentiel, utilise des listes courtes quand c'est utile. N'utilise pas de Markdown lourd (pas de titres #, pas de tableaux).
+Tu peux agir sur son tableau de bord grâce aux outils : quand il te donne une info (dépense, revenu, objectif, idée de projet, entreprise), enregistre-la avec l'outil adapté, puis confirme en une phrase. Pour modifier un élément, utilise son id tel qu'il figure dans les données. Ne supprime rien sans demande explicite.
+Tu aides aussi à développer ses entreprises : suivi des clients potentiels (prospect → contacté → devis envoyé → client gagné / perdu), relances, prix, idées pour trouver des clients, fidélisation. Quand il parle d'un client potentiel, enregistre-le avec ajouter_client et propose une prochaine action datée.
+Les montants sont dans la devise indiquée. Tu n'es pas un conseiller financier agréé : pour les décisions lourdes (fiscalité, juridique, gros investissements), propose de vérifier avec un professionnel.`;
+
+function buildMessages(history, question) {
+  const voiceNote = voiceOn ? "\n\nMODE VOCAL ACTIF : ta réponse sera lue à voix haute. Réponds en 2 à 4 phrases courtes et naturelles, sans listes ni symboles, comme le Jarvis d'Iron Man : posé, efficace, avec une pointe d'humour." : "";
+  const ctx = `${SYSTEM}${voiceNote}\n\nDONNÉES ACTUELLES DU TABLEAU DE BORD (JSON) :\n${JSON.stringify(snapshotForAI())}`;
+  const msgs = [{ role: "user", content: ctx }, { role: "assistant", content: "Compris. Je suis prêt." }];
+  for (const m of history) {
+    if (m.role !== "user" && m.role !== "assistant") continue;
+    const last = msgs[msgs.length - 1];
+    if (last.role === m.role) last.content += "\n\n" + m.content; else msgs.push({ role: m.role, content: m.content });
+  }
+  if (question) { const last = msgs[msgs.length - 1]; if (last.role === "user") last.content += "\n\n" + question; else msgs.push({ role: "user", content: question }); }
+  return msgs;
+}
+
+/* ---------- Voix ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recog = null, micBlocked = false;
+function orbText() {
+  if (convo && micBlocked && !orbState) return "Mode conversation : dictez avec le micro de votre clavier, je réponds à voix haute.";
+  return orbState === "listening" ? (convo ? "Je vous écoute… (dites « stop » pour arrêter)" : "Je vous écoute…") : convo && !orbState ? "Mode conversation actif." : orbState === "thinking" ? "Analyse en cours…" : orbState === "speaking" ? "Jarvis parle… (touchez l'orbe pour l'arrêter)" : sample ? "À votre service. Appuyez sur le micro ou écrivez." : "Jarvis sera disponible une fois la page ouverte sur claude.ai.";
+}
+function setOrb(s) {
+  orbState = s;
+  const o = $("#orb"); if (o) o.dataset.state = s;
+  const l = $("#orbLabel"); if (l) l.textContent = orbText();
+  const m = $("#micBtn"); if (m) m.setAttribute("aria-pressed", s === "listening");
+  updateConvoUi();
+}
+function speakable(t) { return String(t).replace(/[*#_`>•|]/g, "").replace(/^\s*[-–]\s*/gm, "").replace(/\n+/g, ". ").replace(/\.\s*\./g, ".").slice(0, 2000); }
+/* Voix masculines françaises, de la plus naturelle à la plus basique (Edge, macOS/iOS, Windows, Android) */
+const MALE_RANK = [/henri/i, /r[ée]my/i, /thomas/i, /daniel/i, /nicolas/i, /antoine/i, /jean|mathieu|guillaume|alain|fabrice|jerome|jérôme|olivier/i, /paul/i, /claude/i, /x-frd|x-frb|x-cad/i, /\bmale\b|homme|masculin/i];
+const FEMALE = /am[ée]lie|audrey|aur[ée]lie|marie|virginie|julie|denise|[ée]loise|vivienne|sylvie|hortense|c[ée]line|chantal|josephine|brigitte|coralie|jacqueline|yvette|x-fra|x-frc|female|femme|google/i;
+let voicePref = "";
+try { voicePref = localStorage.getItem("jarvis-voice-name") || ""; } catch (e) {}
+function frVoices() { try { return speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang)); } catch (e) { return []; } }
+function isMale(v) { return !!v && !FEMALE.test(v.name + " " + v.voiceURI) && MALE_RANK.some(r => r.test(v.name + " " + v.voiceURI)); }
+function rankMale(v) { const s = v.name + " " + v.voiceURI; const i = MALE_RANK.findIndex(r => r.test(s)); return (i < 0 ? 99 : i) - (/natural|online|enhanced|premium|neural/i.test(s) ? .5 : 0) + (/^fr-fr/i.test(v.lang) ? 0 : .2); }
+function frVoice() {
+  const vs = frVoices(); if (!vs.length) return null;
+  if (voicePref) { const p = vs.find(v => v.name === voicePref); if (p) return p; }
+  const males = vs.filter(isMale).sort((a, b) => rankMale(a) - rankMale(b));
+  return males[0] || vs[0];
+}
+function voiceOptions() {
+  const vs = frVoices(), cur = frVoice();
+  if (!vs.length) return `<option value="">Voix par défaut</option>`;
+  const males = vs.filter(isMale).sort((a, b) => rankMale(a) - rankMale(b)), others = vs.filter(v => !isMale(v));
+  const opt = v => `<option value="${esc(v.name)}" ${cur && v.name === cur.name ? "selected" : ""}>${esc(v.name.replace(/Microsoft |Online \(Natural\) |- French \((France|Canada|Belgium|Switzerland)\)/g, "").trim())}</option>`;
+  return (males.length ? `<optgroup label="Voix d'homme">${males.map(opt).join("")}</optgroup>` : "") + (others.length ? `<optgroup label="Autres voix">${others.map(opt).join("")}</optgroup>` : "");
+}
+try { speechSynthesis.onvoiceschanged = () => { const s = $("#voiceSel"); if (s) s.innerHTML = voiceOptions(); }; } catch (e) {}
+function speak(text, done) {
+  let called = false;
+  const finish = () => { if (called) return; called = true; if (orbState === "speaking") setOrb(""); if (done) done(); };
+  if (!voiceOn || !("speechSynthesis" in window) || !text) { setTimeout(finish, 0); return; }
+  try {
+    speechSynthesis.cancel();
+    const said = speakable(text);
+    const u = new SpeechSynthesisUtterance(said);
+    const v = frVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "fr-FR";
+    // Voix d'homme : ton posé à la Jarvis. Sinon, on grave la voix disponible.
+    u.rate = 0.98; u.pitch = isMale(v) ? 0.92 : 0.7;
+    u.onstart = () => setOrb("speaking");
+    u.onend = u.onerror = finish;
+    speechSynthesis.speak(u);
+    setTimeout(finish, 3000 + said.length * 85); // filet de sécurité si le navigateur ne signale pas la fin
+  } catch (e) { setTimeout(finish, 0); }
+}
+
+/* Mode conversation : Jarvis écoute, répond, puis se remet à écouter tout seul */
+let convo = false;
+const STOP_WORDS = /^(stop|stoppe|arr[êe]te|arr[êe]te[- ]toi|au revoir|bonne nuit|c'est tout|merci c'est tout|pause|silence)\b/i;
+function startConvo() {
+  if (!sample) { alertBox("Jarvis sera disponible une fois la page ouverte sur claude.ai."); return; }
+  convo = true; voiceOn = true; try { localStorage.setItem("jarvis-voice", "1"); } catch (e) {}
+  if (view !== "jarvis") go("jarvis"); else render();
+  beep(520, .12); setTimeout(() => beep(780, .12), 130);
+  const h = new Date().getHours();
+  speak((h < 5 ? "Bonne nuit" : h < 18 ? "Bonjour" : "Bonsoir") + ". Tous les systèmes sont en ligne. Je vous écoute.", listenLoop);
+}
+function stopConvo(sayBye) {
+  convo = false;
+  if (recog) { try { recog.abort(); } catch (e) {} recog = null; }
+  if (sayBye) speak("Très bien. Je reste à votre disposition."); else stopSpeaking();
+  setOrb(""); render();
+}
+function listenLoop() {
+  if (convo && micBlocked) { $("#chatInput")?.focus(); return; }
+  if (convo && !busy && !recog) setTimeout(() => { if (convo && !busy && !recog) startListening(); }, 250); }
+function updateConvoUi() {
+  document.querySelectorAll("[data-convo]").forEach(b => { b.setAttribute("aria-pressed", convo); const l = b.querySelector(".fab-label") || b; l.textContent = convo ? "Arrêter Jarvis" : "Démarrer Jarvis"; });
+  const f = $("#fab"); if (f) { f.dataset.on = convo ? "1" : ""; f.dataset.state = orbState; }
+}
+function stopSpeaking() { try { speechSynthesis.cancel(); } catch (e) {} if (orbState === "speaking") setOrb(""); }
+const MIC_HELP = "Le micro est bloqué dans cette page. Jarvis reste en mode conversation : utilise la dictée de ton clavier (icône micro) pour lui parler, il te répondra à voix haute.";
+function listen() {
+  if (convo) { stopConvo(false); return; }
+  if (orbState === "listening" && recog) { try { recog.stop(); } catch (e) {} return; }
+  if (!voiceOn) { voiceOn = true; try { localStorage.setItem("jarvis-voice", "1"); } catch (e) {} const t = $("#voiceToggle"); if (t) t.checked = true; }
+  startListening();
+}
+function startListening() {
+  stopSpeaking();
+  if (!SR || micBlocked) { alertBox(MIC_HELP); $("#chatInput")?.focus(); return; }
+  let heard = "";
+  try {
+    recog = new SR(); recog.lang = "fr-FR"; recog.interimResults = true; recog.continuous = false;
+    recog.onresult = e => { heard = Array.from(e.results).map(r => r[0].transcript).join(""); const i = $("#chatInput"); if (i) i.value = heard; };
+    recog.onerror = e => { if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") { micBlocked = true; alertBox(MIC_HELP); $("#chatInput")?.focus(); } };
+    recog.onend = () => {
+      recog = null; if (orbState === "listening") setOrb("");
+      const v = heard.trim(); const i = $("#chatInput"); if (i && v) i.value = "";
+      if (v && convo && STOP_WORDS.test(v)) { stopConvo(true); return; }
+      if (v) send(v);
+      else if (convo && !micBlocked) listenLoop(); // silence : on continue d'écouter
+    };
+    recog.start(); setOrb("listening"); beep(980, .04);
+  } catch (e) { recog = null; micBlocked = true; setOrb(""); alertBox(MIC_HELP); }
+}
+
+async function makePlan(id) {
+  const c = S.companies.find(x => x.id === id); if (!c || !sample || busy) return;
+  busy = true; setOrb("thinking");
+  const btn = $("#planBtn"); if (btn) btn.disabled = true;
+  const box = $("#plan"); if (box) box.textContent = "Jarvis étudie " + c.name + "…";
+  let text = "";
+  try {
+    const res = await sample(buildMessages([], `Prépare un plan de développement concret pour l'entreprise « ${c.name} » (id ${c.id}) à partir de ses services, de ses clients potentiels, de ses chiffres et de son objectif de CA. Structure en texte simple (pas de Markdown) :
+1. Diagnostic en 2 phrases.
+2. Les 3 clients potentiels à traiter en priorité cette semaine et quoi leur dire.
+3. 5 actions pour trouver de nouveaux clients adaptées à ce type d'activité et à un petit budget.
+4. Un conseil sur les prix ou les offres (forfaits, abonnements, packs).
+5. L'objectif chiffré pour les 30 prochains jours.
+Maximum 250 mots.`), { modelTier: "complex", onText: u => { text = u.text; const b = $("#plan"); if (b) b.textContent = u.text; } });
+    text = res.text.trim();
+    await db.doc("companies/" + c.id).update({ plan: text, planDate: today() });
+    speak("Votre plan pour " + c.name + " est prêt. " + text.split("\n").slice(0, 2).join(" "));
+  } catch (e) { alertBox(e && e.code === "not_granted" ? "Autorise Jarvis à utiliser Claude pour générer le plan." : "Le plan n'a pas pu être généré. Réessaie dans un instant."); }
+  finally { busy = false; if (orbState === "thinking") setOrb(""); render(); }
+}
+
+async function send(text) {
+  text = String(text || "").trim();
+  if (!text || busy || !sample || !db) return;
+  stopSpeaking(); beep(1320, .05);
+  busy = true; pending = { text: "", tools: [] }; setOrb("thinking");
+  if (view !== "jarvis") go("jarvis"); else updateChat();
+  try { await db.collection("chat").add({ role: "user", content: text, ts: Date.now() }); } catch (e) {}
+  const history = S.chat.filter(m => m.role === "user" || m.role === "assistant").slice(-20);
+  if (!history.length || history[history.length - 1].content !== text) history.push({ role: "user", content: text });
+  const toolLog = [];
+  const log = s => { toolLog.push(s); pending.tools.push(s); updateChat(); };
+  try {
+    const res = await sample(buildMessages(history), { tools: makeTools(log), cache: false, onText: u => { pending.text = u.text; updateChat(); } });
+    const answer = (res.text || "").trim() || "C'est fait.";
+    for (const t of toolLog) await db.collection("chat").add({ role: "tool", content: t, ts: Date.now() });
+    await db.collection("chat").add({ role: "assistant", content: answer, ts: Date.now() + 1 });
+    setOrb(""); speak(answer, () => { if (convo) listenLoop(); });
+  } catch (e) {
+    const msg = e && e.code === "not_granted" ? "Tu n'as pas autorisé Jarvis à utiliser Claude. Autorise-le depuis le menu Permissions de la page."
+      : e && e.code === "rate_limited" ? "Trop de demandes d'un coup. Attends une minute et réessaie."
+      : "Je n'ai pas pu répondre (" + ((e && e.message) || "erreur inconnue") + "). Réessaie.";
+    try { await db.collection("chat").add({ role: "assistant", content: msg, ts: Date.now() }); } catch (_) {}
+    if (convo) speak(msg, listenLoop);
+    if (e && e.code === "not_granted") sample = null;
+  } finally { busy = false; pending = null; if (orbState === "thinking") setOrb(""); render(); }
+}
+
+async function makeBriefing() {
+  if (!sample || busy) return;
+  busy = true; const box = $("#brief"); const btn = $("#briefBtn"); if (btn) btn.disabled = true;
+  if (box) box.textContent = "Jarvis analyse ta situation…";
+  try {
+    const res = await sample(buildMessages([], "Fais-moi mon briefing du jour en 120 mots maximum : 1) où j'en suis financièrement ce mois-ci, 2) l'objectif qui demande le plus d'attention, 3) trois actions concrètes pour aujourd'hui. Si les données sont vides, explique comment démarrer."), { modelTier: "quick", onText: u => { briefing = u.text; const b = $("#brief"); if (b) b.textContent = u.text; } });
+    briefing = res.text.trim();
+    speak(briefing);
+  } catch (e) { briefing = e && e.code === "not_granted" ? "Autorise Jarvis à utiliser Claude pour obtenir ton briefing." : "Le briefing n'a pas pu être généré. Réessaie dans un instant."; }
+  finally { busy = false; render(); }
+}
+
+/* ---------- Événements ---------- */
+function go(v) { view = v; try { history.replaceState(null, "", "#" + v); } catch (e) {} render(); window.scrollTo(0, 0); }
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-convo],[data-view],[data-new],[data-edit],[data-suggest],[data-company],[data-advance],[data-plan],#briefBtn,#clearChat,#micBtn,#orb,#voiceTest");
+  if (!t) return;
+  if (t.hasAttribute("data-convo")) { if (convo) stopConvo(false); else startConvo(); }
+  else if (t.dataset.advance) advance(t.dataset.advance);
+  else if (t.dataset.plan) makePlan(t.dataset.plan);
+  else if (t.dataset.company) { currentCompany = t.dataset.company; go("entreprise"); }
+  else if (t.id === "micBtn") listen();
+  else if (t.id === "voiceTest") { voiceOn = true; try { localStorage.setItem("jarvis-voice", "1"); } catch (_) {} const vt = $("#voiceToggle"); if (vt) vt.checked = true; speak("Bonsoir. Ici Jarvis. Tous les systèmes sont opérationnels."); }
+  else if (t.id === "orb") stopSpeaking();
+  else if (t.dataset.view) go(t.dataset.view);
+  else if (t.dataset.new) openForm(t.dataset.new);
+  else if (t.dataset.edit) openForm(t.dataset.edit, t.dataset.id);
+  else if (t.dataset.suggest) send(t.dataset.suggest);
+  else if (t.id === "briefBtn") makeBriefing();
+  else if (t.id === "clearChat") clearChat(t);
+});
+document.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-edit][tabindex]")) { e.preventDefault(); openForm(e.target.dataset.edit, e.target.dataset.id); }
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-company][tabindex]")) { e.preventDefault(); currentCompany = e.target.dataset.company; go("entreprise"); }
+  if (e.key === "Enter" && !e.shiftKey && e.target.id === "chatInput") { e.preventDefault(); $("#composer").requestSubmit(); }
+});
+document.addEventListener("submit", e => {
+  if (e.target.id === "composer") { e.preventDefault(); const i = $("#chatInput"); const v = i.value; i.value = ""; send(v); }
+  if (e.target.id === "quickAsk") { e.preventDefault(); const v = $("#quickInput").value; send(v); }
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "finMonth") { finMonth = e.target.value; render(); }
+  if (e.target.id === "voiceSel") { voicePref = e.target.value; try { localStorage.setItem("jarvis-voice-name", voicePref); } catch (_) {} voiceOn = true; try { localStorage.setItem("jarvis-voice", "1"); } catch (_) {} const vt = $("#voiceToggle"); if (vt) vt.checked = true; speak("Voix sélectionnée. Je suis prêt."); }
+  if (e.target.id === "clientFilter") { clientFilter = e.target.value; render(); }
+  if (e.target.id === "voiceToggle") { voiceOn = e.target.checked; try { localStorage.setItem("jarvis-voice", voiceOn ? "1" : "0"); } catch (_) {} if (voiceOn) speak("Mode vocal activé. À votre service."); else stopSpeaking(); }
+  if (e.target.id === "currency" && db) db.doc("settings/main").set({ ...S.settings, currency: e.target.value }).catch(toastErr);
+});
+async function advance(id) {
+  const x = S.clients.find(c => c.id === id); if (!x || !db) return;
+  const i = STAGE_ORDER.indexOf(stageOf(x)), next = STAGE_ORDER[i + 1];
+  if (!next || !OPEN_STAGES.includes(stageOf(x))) return;
+  try { await db.doc("clients/" + id).update({ stage: next, ...(next === "gagne" ? { wonDate: today() } : {}) }); } catch (err) { toastErr(err); }
+}
+let clearArmed = false;
+async function clearChat(btn) {
+  if (!db || !S.chat.length) return;
+  if (!clearArmed) { clearArmed = true; btn.textContent = "Confirmer l'effacement"; setTimeout(() => { clearArmed = false; if (btn.isConnected) btn.textContent = "Effacer la conversation"; }, 4000); return; }
+  clearArmed = false;
+  for (const m of [...S.chat]) { try { await db.doc("chat/" + m.id).delete(); } catch (e) {} }
+}
+
+/* ---------- Effets HUD ---------- */
+function reactor() {
+  let seg = "";
+  for (let i = 0; i < 10; i++) seg += `<rect x="47" y="21" width="6" height="9" rx="1" transform="rotate(${i * 36} 50 50)"/>`;
+  return `<svg class="reactor" viewBox="0 0 100 100" aria-hidden="true"><circle class="r-out" cx="50" cy="50" r="47"/><circle class="r-dash" cx="50" cy="50" r="41"/><circle class="r-arc" cx="50" cy="50" r="35"/><g class="r-seg">${seg}</g><circle class="r-ring" cx="50" cy="50" r="19"/><circle class="r-core" cx="50" cy="50" r="12"/></svg>`;
+}
+document.querySelectorAll(".reactor-slot").forEach(s => { s.outerHTML = reactor(); });
+function tick() { const c = $("#clock"); if (c) c.textContent = new Date().toLocaleTimeString("fr-FR"); }
+tick(); setInterval(tick, 1000);
+(function hud() {
+  const cv = $("#hud"); if (!cv || !cv.getContext) return;
+  const ctx = cv.getContext("2d");
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const P = Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random(), v: .0002 + Math.random() * .0007, r: Math.random() * 1.5 + .4 }));
+  let w = 0, h = 0, dpr = 1, t = 0;
+  function size() { dpr = Math.min(2, window.devicePixelRatio || 1); w = cv.width = innerWidth * dpr; h = cv.height = innerHeight * dpr; }
+  size(); addEventListener("resize", size);
+  function frame() {
+    t++;
+    ctx.clearRect(0, 0, w, h);
+    const cx = w * .84, cy = h * .8, R = Math.min(w, h) * .34;
+    ctx.lineWidth = dpr;
+    for (let k = 0; k < 5; k++) {
+      const a = t * .0016 * (k % 2 ? 1 : -1) * (1 + k * .4);
+      ctx.strokeStyle = `rgba(58,214,255,${.05 + k * .012})`;
+      ctx.setLineDash(k % 2 ? [3 * dpr, 9 * dpr] : [50 * dpr, 24 * dpr, 8 * dpr, 24 * dpr]);
+      ctx.beginPath(); ctx.arc(cx, cy, R * (.35 + k * .17), a, a + Math.PI * (1.2 + k * .15)); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    const sy = (t * 1.2 * dpr) % (h + 200) - 100;
+    const g = ctx.createLinearGradient(0, sy - 60, 0, sy);
+    g.addColorStop(0, "rgba(58,214,255,0)"); g.addColorStop(1, "rgba(58,214,255,0.035)");
+    ctx.fillStyle = g; ctx.fillRect(0, sy - 60, w, 60);
+    for (const p of P) {
+      if (!reduce) { p.y -= p.v; if (p.y < 0) { p.y = 1; p.x = Math.random(); } }
+      ctx.fillStyle = "rgba(58,214,255,0.4)"; ctx.beginPath(); ctx.arc(p.x * w, p.y * h, p.r * dpr, 0, 7); ctx.fill();
+    }
+    if (!reduce) requestAnimationFrame(frame);
+  }
+  frame();
+})();
+function beep(f = 880, d = .06) {
+  if (!voiceOn) return;
+  try { const A = window.AudioContext || window.webkitAudioContext; beep.ctx = beep.ctx || new A(); const c = beep.ctx, o = c.createOscillator(), g = c.createGain();
+    o.type = "sine"; o.frequency.value = f; g.gain.setValueAtTime(.05, c.currentTime); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + d);
+    o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + d); } catch (e) {}
+}
+
+/* ---------- Démarrage ---------- */
+render();
+(async () => {
+  const c = window.claude;
+  if (!c || !c.use) { offline = true; $("#status").textContent = "Aperçu hors ligne"; render(); return; }
+  db = await c.use("db");
+  if (!db) { offline = true; $("#status").textContent = "Données indisponibles"; render(); return; }
+  $("#status").textContent = "Synchronisé";
+  for (const col of COLS) db.collection(col).onSnapshot(snap => { S[col] = snap.docs.map(d => ({ id: d.id, ...d.data() })); S.loaded[col] = true; render(); }, () => { $("#status").textContent = "Erreur de synchronisation"; });
+  db.collection("chat").orderBy("ts", "desc").limit(80).onSnapshot(snap => { S.chat = snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse(); if (view === "jarvis") updateChat(); });
+  db.doc("settings/main").onSnapshot(snap => { if (snap.exists) S.settings = { currency: "EUR", ...snap.data() }; render(); });
+  sample = await c.use("sample");
+  render();
+})();
+</script>
+
+</body>
+</html>

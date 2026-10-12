@@ -643,6 +643,8 @@ function updateChat() {
   box.innerHTML = items.length ? items.join("") : `<div class="empty" style="margin:auto;text-align:center;max-width:46ch">Bonjour, je suis Jarvis. Dis-moi tes objectifs, tes dépenses, tes idées d'entreprise : je les note, je fais les calculs et je t'aide à décider.</div>`;
   $("#suggest").hidden = S.chat.length > 0 || !!pending;
   $("#sendBtn").disabled = busy || !sample;
+  const ci = $("#chatInput"); if (ci) ci.placeholder = sample ? "Écris à Jarvis… (Entrée pour envoyer)" : "Jarvis sera disponible une fois la page ouverte sur claude.ai";
+  const ol = $("#orbLabel"); if (ol) ol.textContent = orbText();
   if (atBottom || pending) box.scrollTop = box.scrollHeight;
 }
 
