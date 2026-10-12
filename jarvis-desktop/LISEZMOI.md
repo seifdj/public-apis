@@ -29,9 +29,13 @@ C'est elle qui permet à Jarvis de réfléchir et de te répondre.
 > 💶 **Coût :** l'API se paie à l'usage. Ce n'est pas compris dans un abonnement Claude.ai. Compte environ **2 à 5 centimes par échange** avec Jarvis. Dans la console, tu peux fixer une limite de dépense mensuelle.
 
 ### 4. Lancer Jarvis
-- **Windows :** double-clique sur **`Demarrer-Jarvis.bat`**.
-  - Si Windows affiche « Windows a protégé votre ordinateur », clique sur *Informations complémentaires*, puis sur *Exécuter quand même*.
-  - Pour avoir l'icône Jarvis sur ton Bureau, double-clique une fois sur **`Creer-raccourci-Bureau.bat`**.
+- **Windows (méthode recommandée, compatible avec le Contrôle intelligent des applications) :**
+  1. Ouvre le dossier Jarvis, celui qui contient `server.js`.
+  2. Clique dans la **barre d'adresse** de l'Explorateur (en haut), efface le texte, tape `powershell` puis appuie sur **Entrée**. Une fenêtre bleue s'ouvre, déjà placée dans le bon dossier.
+  3. Tape `node installer.js` puis appuie sur **Entrée**.
+
+  L'installateur débloque les fichiers, installe les composants, crée l'icône **Jarvis** sur ton Bureau, puis démarre Jarvis. Les fois suivantes, double-clique simplement sur l'icône Jarvis du Bureau.
+- **Windows (autre méthode) :** double-clique sur `Demarrer-Jarvis.bat`. Si Windows le bloque avec le message « Contrôle intelligent des applications », utilise la méthode recommandée ci-dessus.
 - **Mac :** fais un clic droit sur **`Demarrer-Jarvis.command`**, puis *Ouvrir* (la première fois seulement).
 
 Au premier lancement, Jarvis installe ses composants, ce qui prend environ 30 secondes. Ensuite, sa fenêtre s'ouvre et il te demande ta clé API : colle-la et clique sur **Enregistrer**.
@@ -68,6 +72,8 @@ Jarvis choisit automatiquement la voix d'homme la plus naturelle de ton ordinate
 
 | Problème | Solution |
 |---|---|
+| « Contrôle intelligent des applications a bloqué… » | N'utilise pas les fichiers `.bat` : suis la méthode recommandée (`node installer.js`). Ne désactive pas cette protection, car Windows ne permet pas de la réactiver sans réinstaller le système. |
+| « node n'est pas reconnu » | Node.js n'est pas installé, ou le terminal était déjà ouvert avant l'installation : ferme-le et rouvre-le. |
 | « Node.js n'est pas installé » | Installe Node.js (étape 2), puis relance. |
 | « La clé API est refusée » | Ouvre Réglages et colle à nouveau ta clé. |
 | « Ton compte API n'a plus de crédit » | Recharge ton crédit sur console.anthropic.com, dans Billing. |
