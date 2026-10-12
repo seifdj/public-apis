@@ -29,13 +29,14 @@ C'est elle qui permet à Jarvis de réfléchir et de te répondre.
 > 💶 **Coût :** l'API se paie à l'usage. Ce n'est pas compris dans un abonnement Claude.ai. Compte environ **2 à 5 centimes par échange** avec Jarvis. Dans la console, tu peux fixer une limite de dépense mensuelle.
 
 ### 4. Lancer Jarvis
-- **Windows (méthode recommandée, compatible avec le Contrôle intelligent des applications) :**
-  1. Ouvre le dossier Jarvis, celui qui contient `server.js`.
+- **Windows :**
+  > ⚠️ Ne double-clique sur **aucun fichier** du dossier : Windows les bloquerait (« extension de fichier dangereuse »). On lance Jarvis avec une commande, une seule fois.
+
+  1. Ouvre le dossier Jarvis, celui qui contient `server.mjs` et `installer.mjs`.
   2. Clique dans la **barre d'adresse** de l'Explorateur (en haut), efface le texte, tape `powershell` puis appuie sur **Entrée**. Une fenêtre bleue s'ouvre, déjà placée dans le bon dossier.
-  3. Tape `node installer.js` puis appuie sur **Entrée**.
+  3. Tape `node installer.mjs` puis appuie sur **Entrée**.
 
   L'installateur débloque les fichiers, installe les composants, crée l'icône **Jarvis** sur ton Bureau, puis démarre Jarvis. Les fois suivantes, double-clique simplement sur l'icône Jarvis du Bureau.
-- **Windows (autre méthode) :** double-clique sur `Demarrer-Jarvis.bat`. Si Windows le bloque avec le message « Contrôle intelligent des applications », utilise la méthode recommandée ci-dessus.
 - **Mac :** fais un clic droit sur **`Demarrer-Jarvis.command`**, puis *Ouvrir* (la première fois seulement).
 
 Au premier lancement, Jarvis installe ses composants, ce qui prend environ 30 secondes. Ensuite, sa fenêtre s'ouvre et il te demande ta clé API : colle-la et clique sur **Enregistrer**.
@@ -72,7 +73,7 @@ Jarvis choisit automatiquement la voix d'homme la plus naturelle de ton ordinate
 
 | Problème | Solution |
 |---|---|
-| « Contrôle intelligent des applications a bloqué… » | N'utilise pas les fichiers `.bat` : suis la méthode recommandée (`node installer.js`). Ne désactive pas cette protection, car Windows ne permet pas de la réactiver sans réinstaller le système. |
+| « Contrôle intelligent des applications a bloqué… » | Tu as double-cliqué sur un fichier du dossier. Ferme le message et lance plutôt la commande `node installer.mjs` dans PowerShell (étape 4). Ensuite, utilise uniquement l'icône Jarvis du Bureau. Ne désactive pas cette protection, car Windows ne permet pas de la réactiver sans réinstaller le système. |
 | « node n'est pas reconnu » | Node.js n'est pas installé, ou le terminal était déjà ouvert avant l'installation : ferme-le et rouvre-le. |
 | « Node.js n'est pas installé » | Installe Node.js (étape 2), puis relance. |
 | « La clé API est refusée » | Ouvre Réglages et colle à nouveau ta clé. |
@@ -84,6 +85,6 @@ Jarvis choisit automatiquement la voix d'homme la plus naturelle de ton ordinate
 
 ### Pour les développeurs
 
-- `server.js` : serveur local (port 4747, accessible uniquement depuis ton ordinateur). Il sert l'interface, enregistre les données en JSON et transmet les demandes à Claude via le SDK officiel `@anthropic-ai/sdk` (modèle `claude-opus-5-5`).
+- `server.mjs` : serveur local (port 4747, accessible uniquement depuis ton ordinateur). Il sert l'interface, enregistre les données en JSON et transmet les demandes à Claude via le SDK officiel `@anthropic-ai/sdk` (modèle `claude-opus-5-5`).
 - `public/local-runtime.js` : fait le lien entre l'interface et le serveur local, et gère la boucle d'outils de Claude.
 - `public/index.html` : interface générée à partir de `../jarvis/index.html` (la version claude.ai). Après chaque modification de cette interface, lance `node sync-ui.mjs`.

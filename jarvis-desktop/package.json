@@ -4,8 +4,8 @@
   "private": true,
   "description": "Jarvis : tableau de bord personnel avec assistant vocal Claude, installé en local",
   "type": "module",
-  "main": "server.js",
-  "scripts": { "start": "node server.js" },
+  "main": "server.mjs",
+  "scripts": { "start": "node server.mjs" },
   "engines": { "node": ">=18" },
   "dependencies": { "@anthropic-ai/sdk": "0.128.0" }
 }

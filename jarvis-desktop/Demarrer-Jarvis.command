@@ -11,4 +11,4 @@ if [ ! -d node_modules/@anthropic-ai/sdk ]; then
   echo "Première utilisation : installation des composants..."
   npm install --omit=dev --no-audit --no-fund
 fi
-node server.js
+node server.mjs
