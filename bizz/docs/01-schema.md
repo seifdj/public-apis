@@ -578,13 +578,15 @@ create function private.setting(k text) returns jsonb language sql stable securi
 
 ## 6. Policies RLS par rôle
 
-`alter table ... enable row level security` sur **toutes** les tables. Aucune policy pour `anon` : l'app exige une session (même pour lire le feed, on crée une session anonyme Supabase si besoin, à décider à l'étape 4).
+`alter table ... enable row level security` sur **toutes** les tables.
+
+**Droits (mise à jour après la création du projet, migration `0006`)** : Supabase accorde par défaut tous les droits sur `public` à `anon` et `authenticated`. Ces droits par défaut sont retirés. `anon` n'a aucun droit. `authenticated` reçoit des `grant` explicites par table, par colonne pour `profiles`, et par fonction. Aucune vue `security definer`. Le trigger de protection des colonnes se base sur le rôle SQL courant (`authenticated`), pas sur les claims, pour que les fonctions serveur puissent modifier les colonnes protégées. Aucune policy pour `anon` : l'app exige une session (même pour lire le feed, on crée une session anonyme Supabase si besoin, à décider à l'étape 4).
 
 Légende : **C** = client connecté, **V** = vendeur (propriétaire de la boutique), **M** = modérateur (dans sa zone), **A** = admin, **—** = interdit, **srv** = uniquement via fonction `security definer` ou service role.
 
 | Table | SELECT | INSERT | UPDATE | DELETE |
 |---|---|---|---|---|
-| profiles | soi-même ; colonnes publiques de tous (vue `public_profiles`) ; M/A : tout | srv (trigger auth) | soi-même (hors `role`, `is_*`, `moderation_*`, `phone_verified`, `suspended_until`) ; A : tout | srv (`delete_my_account`) |
+| profiles | colonnes publiques de tous (`grant select` par colonne + vue `public_profiles`) ; ligne complète de soi-même via `get_my_profile()` ; M/A : via fonctions dédiées | srv (trigger auth) | soi-même, colonnes `username`, `display_name`, `avatar_url`, `city_id`, `location`, `terms_accepted_at` uniquement ; le reste via fonctions serveur | srv (`delete_my_account`) |
 | device_tokens | soi | soi | soi | soi |
 | blocks | soi (blocker) | soi | — | soi |
 | cities, categories | tous | A | A | A |

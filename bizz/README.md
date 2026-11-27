@@ -25,14 +25,29 @@ npx expo start --dev-client
 
 ## Base Supabase
 
+Projet **Bizz** (organisation Supabase de Seif, région `eu-west-3` Paris). Les migrations `0001` à `0006` y sont appliquées.
+
 ```bash
-npx supabase link --project-ref <ref>
-npx supabase db push                                   # applique supabase/migrations/
+npx supabase link --project-ref <ref>                  # ref visible dans Project Settings > General
+npx supabase db push                                   # applique les nouvelles migrations de supabase/migrations/
 node --experimental-strip-types scripts/load-cities.ts > supabase/seed/cities.sql
 npx supabase db query --file supabase/seed/cities.sql   # ~35 000 communes
+npx supabase gen types typescript --project-id <ref> > src/lib/database.types.ts
 ```
 
-Puis, dans le dashboard : Authentication > Hooks > *Custom Access Token* → `public.auth_hook_add_claims` ; Authentication > Providers > Phone (Twilio Verify).
+À faire une fois dans le dashboard :
+- Authentication > Hooks > *Customize Access Token (JWT) Claims* → fonction Postgres `public.auth_hook_add_claims`.
+- Authentication > Sign In / Providers > Phone (Twilio Verify), puis Apple et Google (étape 2).
+- Database > Extensions > `pg_cron` (étape 6).
+
+### Règles de sécurité des migrations
+
+Supabase donne par défaut tous les droits sur les nouveaux objets de `public` aux rôles `anon` et `authenticated`. La migration `0006` retire ces droits par défaut. Depuis :
+- `anon` n'a aucun droit (l'app a toujours une session) ;
+- chaque table reçoit des `grant` explicites pour `authenticated`, au niveau colonne pour `profiles` ;
+- chaque fonction est créée avec `set search_path = ''`, puis `grant execute` nominatif ;
+- chaque migration qui crée des fonctions se termine par `revoke execute on all functions in schema public, private from public, anon` ;
+- `npm run db:test` échoue si une table n'a pas RLS, si `anon` a un droit, ou si une fonction non listée est exécutable par `authenticated`.
 
 ## Structure
 
@@ -53,5 +68,5 @@ docs/               cadrage (décisions, schéma, écrans, étapes)
 
 | Étape | État |
 |---|---|
-| 1. Socle Expo + Supabase + design system | Fait |
+| 1. Socle Expo + Supabase + design system | Fait (projet Supabase créé, migrations 0001-0006 appliquées) |
 | 2. Accueil, choix du rôle, inscription par téléphone | À faire |
