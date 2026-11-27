@@ -22,7 +22,7 @@ interface Commune {
 function slugify(name: string): string {
   return name
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/œ/g, 'oe') // same result as Postgres unaccent(), used by scripts/load-cities.sql
     .replace(/æ/g, 'ae')
