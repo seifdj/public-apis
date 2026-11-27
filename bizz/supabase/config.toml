@@ -1,0 +1,47 @@
+# Supabase CLI config. `project_id` is the local folder name; link the remote with `supabase link --project-ref <ref>`.
+project_id = "bizz"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 100
+
+[db]
+port = 54322
+major_version = 17
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[auth]
+enabled = true
+site_url = "bizz://"
+additional_redirect_urls = ["bizz://", "exp://127.0.0.1:8081"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+enable_signup = true
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+max_frequency = "20s"
+# Test numbers used by the seed accounts (no SMS sent). Keep them in sync with docs/01-schema.md §8.
+[auth.sms.test_otp]
+33600000001 = "123456"
+33600000002 = "123456"
+33600000003 = "123456"
+33600000004 = "123456"
+
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/auth_hook_add_claims"
+
+[storage]
+enabled = true
+file_size_limit = "15MiB"
+
+[realtime]
+enabled = true
