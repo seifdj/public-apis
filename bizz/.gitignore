@@ -44,3 +44,6 @@ example
 
 # env
 .env
+
+# The parent repository ignores every lib/ folder (Python template); ours is source code.
+!/src/lib/
