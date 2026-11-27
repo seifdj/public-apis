@@ -24,6 +24,8 @@ function slugify(name: string): string {
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
+    .replace(/œ/g, 'oe') // same result as Postgres unaccent(), used by scripts/load-cities.sql
+    .replace(/æ/g, 'ae')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
