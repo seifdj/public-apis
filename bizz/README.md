@@ -30,10 +30,10 @@ Projet **Bizz** (organisation Supabase de Seif, région `eu-west-3` Paris). Les 
 ```bash
 npx supabase link --project-ref <ref>                  # ref visible dans Project Settings > General
 npx supabase db push                                   # applique les nouvelles migrations de supabase/migrations/
-node --experimental-strip-types scripts/load-cities.ts > supabase/seed/cities.sql
-npx supabase db query --file supabase/seed/cities.sql   # ~35 000 communes
 npx supabase gen types typescript --project-id <ref> > src/lib/database.types.ts
 ```
+
+Les 34 875 communes sont chargées dans `cities` (101 départements). Pour recharger : coller `scripts/load-cities.sql` dans le SQL editor. `scripts/load-cities.ts` produit le même contenu en fichier SQL, pour une base locale.
 
 À faire une fois dans le dashboard :
 - Authentication > Hooks > *Customize Access Token (JWT) Claims* → fonction Postgres `public.auth_hook_add_claims`.
