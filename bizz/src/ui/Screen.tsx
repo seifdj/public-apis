@@ -39,7 +39,7 @@ function Halo({ color, size, style }: { color: string; size: number; style: View
 /** White background with the two soft halos (navy top-left, orange bottom-right). */
 export function Halos() {
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View pointerEvents="none" style={styles.halos}>
       <Halo color={colors.primary} size={520} style={styles.haloPrimary} />
       <Halo color={colors.accent} size={560} style={styles.haloAccent} />
     </View>
@@ -69,6 +69,7 @@ export function Screen({ children, scroll = true, withTabBar = false, padded = t
 }
 
 const styles = StyleSheet.create({
+  halos: { ...StyleSheet.absoluteFill, overflow: 'hidden' },
   root: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   grow: { flexGrow: 1 },

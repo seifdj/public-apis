@@ -24,7 +24,7 @@ npm run go            # affiche un QR code : appareil photo sur iPhone, app Expo
 npm run go:tunnel     # si le téléphone et l'ordinateur ne sont pas sur le même Wi-Fi
 ```
 
-Tous les modules natifs utilisés jusqu'à l'étape 3 sont inclus dans Expo Go (SDK 58). Limites d'Expo Go : la connexion Apple et Google ne fonctionne pas (adresse de retour différente). Un build de développement deviendra nécessaire à l'étape 9 (achats in-app), et avant pour tester Apple, Google et les liens `bizz://` :
+Tous les modules natifs utilisés jusqu'à l'étape 5 (dont `expo-location`) sont inclus dans Expo Go (SDK 58). Limites d'Expo Go : la connexion Apple et Google ne fonctionne pas (adresse de retour différente). Un build de développement deviendra nécessaire à l'étape 9 (achats in-app), et avant pour tester Apple, Google et les liens `bizz://` :
 
 ```bash
 npx eas-cli@latest build --profile development --platform android
@@ -100,4 +100,4 @@ docs/               cadrage (décisions, schéma, écrans, étapes)
 | 2. Accueil, choix du rôle, inscription, profil, ouverture de boutique | Fait (migrations 0007-0008). Phone actif en numéros de test ; Apple et Google restent à configurer |
 | 3. Boutique et publications (photos) + quota | Fait (migrations 0009-0010, données de démo chargées) |
 | 4. Feed + abonnements + likes + favoris + signalement et blocage | Fait (migration 0011) |
-| 5. Recherche + annuaire + géolocalisation | À faire |
+| 5. Recherche + annuaire + géolocalisation + alertes | Fait (migrations 0012-0014). Notifications d'alerte à l'étape 6 |

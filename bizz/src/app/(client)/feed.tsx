@@ -5,11 +5,14 @@ import { ActivityIndicator, FlatList, type LayoutChangeEvent, StyleSheet, View }
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DropsRow } from '@/features/feed/DropsRow';
+import { PlaceChip } from '@/features/search/PlaceChip';
 import { FeedCard } from '@/features/feed/FeedCard';
 import { type FeedItem, type FeedTab, recordViews } from '@/features/social/api';
 import { ContentMenu } from '@/features/social/ContentMenu';
 import { useDrops, useFeed, useSocialActions } from '@/features/social/hooks';
 import { fr } from '@/i18n/fr';
+import { requestPosition } from '@/lib/geo';
+import { usePlaceStore } from '@/store/place';
 import { colors, sizes, spacing } from '@/theme/theme';
 import { Chip, EmptyState, Halos, Text, Wordmark } from '@/ui';
 
@@ -56,6 +59,12 @@ export default function FeedScreen() {
   const changeTab = (next: FeedTab) => {
     setTab(next);
     listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    // First visit of "Près de moi": ask for the position once. Refused = the profile city is used.
+    const { place, gpsAsked, markGpsAsked, setPlace } = usePlaceStore.getState();
+    if (next === 'nearby' && place.mode === 'profile' && !gpsAsked) {
+      markGpsAsked();
+      void requestPosition().then((coords) => coords && setPlace({ mode: 'gps', coords }));
+    }
   };
 
   const tabBarSpace = sizes.tabBarHeight + sizes.tabBarBottomGap + insets.bottom;
@@ -74,6 +83,11 @@ export default function FeedScreen() {
             <Chip key={t} label={fr.feed.tabs[t]} selected={tab === t} onPress={() => changeTab(t)} testID={`feed-tab-${t}`} />
           ))}
         </View>
+        {tab === 'nearby' ? (
+          <View style={styles.place}>
+            <PlaceChip selected />
+          </View>
+        ) : null}
         <DropsRow drops={drops} onOpen={(drop) => (drop.latest_post_id ? openPost(drop.latest_post_id) : openShop(drop.slug))} />
       </View>
 
@@ -143,6 +157,7 @@ const styles = StyleSheet.create({
   header: { gap: spacing.sm },
   brand: { paddingHorizontal: spacing.screen },
   tabs: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.screen, marginBottom: spacing.xs },
+  place: { flexDirection: 'row', paddingHorizontal: spacing.screen, marginBottom: spacing.xs },
   list: { flex: 1 },
   loader: { marginTop: spacing.xxxl },
   footer: { paddingVertical: spacing.xl },

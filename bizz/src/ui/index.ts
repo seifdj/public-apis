@@ -13,6 +13,7 @@ export { Halos, Screen } from './Screen';
 export { Sheet } from './Sheet';
 export { ScreenHeader } from './ScreenHeader';
 export { Skeleton } from './Skeleton';
+export { Toggle } from './Toggle';
 export { StatusBadge, type BadgeKind } from './StatusBadge';
 export { Text } from './Text';
 export { Wordmark } from './Wordmark';

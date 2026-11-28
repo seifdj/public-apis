@@ -1,6 +1,7 @@
 import type { PostWithMedia } from '@/features/posts/api';
 import type { Database, Shop } from '@/lib/database.types';
 import { supabase } from '@/lib/supabase';
+import { type Place, placeParams } from '@/store/place';
 
 export type FeedTab = 'for_you' | 'following' | 'nearby';
 type FeedRow = Database['public']['Functions']['feed']['Returns'][number];
@@ -16,11 +17,13 @@ export interface FeedCursor {
 }
 export const FEED_PAGE_SIZE = 8;
 
-export async function fetchFeedPage(tab: FeedTab, cursor: FeedCursor | null): Promise<{ items: FeedItem[]; next: FeedCursor | null }> {
+export async function fetchFeedPage(tab: FeedTab, cursor: FeedCursor | null, place: Place, radiusKm: number): Promise<{ items: FeedItem[]; next: FeedCursor | null }> {
   const { data, error } = await supabase.rpc('feed', {
     p_tab: tab,
     p_limit: FEED_PAGE_SIZE,
     ...(cursor ? { p_cursor_ts: cursor.ts, p_cursor_id: cursor.id } : {}),
+    ...placeParams(place),
+    p_radius_km: radiusKm,
   });
   if (error) throw error;
   const items = (data ?? []).map((row) => ({ ...row, media: (row.media as unknown as FeedMedia[]) ?? [] }));

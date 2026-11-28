@@ -104,6 +104,7 @@ do $$ declare leaked text; begin
        'public.get_post_allowance', 'public.create_post', 'public.update_post', 'public.delete_post',
        'public.block_user', 'public.unblock_user', 'public.my_blocked_users', 'public.report_target',
        'public.record_views', 'public.feed', 'public.drops_today',
+       'public.search_posts', 'public.find_shops', 'private.search_origin',
        'private.is_admin', 'private.is_moderator', 'private.mod_covers', 'private.is_blocked_between',
        'private.paris_today', 'private.immutable_unaccent', 'private.post_search_vector');
   assert leaked is null, 'unexpected functions executable by authenticated: ' || leaked;
@@ -666,6 +667,87 @@ delete from public.likes where user_id = auth.uid() and post_id = (select v from
 do $$ begin
   assert (select count(*) from public.shops where slug = 'sweetcakes') = 1, 'unblock restores the shop';
   assert (select likes_count from public.posts where id = (select v from public.test_ids where k = 'p2')) = 0, 'unlike decrements';
+end $$;
+reset role;
+
+-- 13. Step 5: search, filters, directory, alerts.
+-- Posts: sweetcakes (Lyon) "Number cake 20 parts" 35 € creation/food (p2) and "Sac réplique de créateur" (p3);
+--        drip_vintage (Paris) "Veste vintage 1..3" 45 € object/fashion (the 4th is sold).
+update public.posts set title = 'Sac cabas de créateur', price_cents = 6500, type = 'object' where id = (select v from public.test_ids where k = 'p3');
+update public.posts set price_cents = 2000 where id = md5('t4-2')::uuid;
+update public.shops set city_id = 69123 where slug = 'sweetcakes';
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000002","role":"authenticated","app_metadata":{}}', false);
+do $$ declare r record; n int; begin
+  -- text
+  assert (select count(*) from public.search_posts('number cake')) = 1, 'full-text match';
+  assert (select count(*) from public.search_posts('numbr cak')) = 1, 'typo tolerance';
+  assert (select count(*) from public.search_posts('createur')) = 1 and (select count(*) from public.search_posts('CRÉATEUR')) = 1, 'accents and case ignored';
+  assert (select count(*) from public.search_posts('vestes')) = 3, 'French stemming (plural) + only available posts';
+  assert (select count(*) from public.search_posts('drip')) = 3, 'shop name match';
+  assert (select count(*) from public.search_posts('licorne')) = 0, 'no match';
+  assert (select count(*) from public.search_posts(null)) = 5 and (select count(*) from public.search_posts('   ')) = 5, 'empty query = browse everything available';
+  select * into r from public.search_posts('number cake');
+  assert r.shop_slug = 'sweetcakes' and r.city_name = 'Lyon' and jsonb_array_length(r.media) = 1 and r.distance_km = 0, 'same row shape as the feed';
+  -- filters
+  assert (select count(*) from public.search_posts(null, (select id from public.categories where slug = 'fashion'))) = 3, 'category filter';
+  assert (select count(*) from public.search_posts(null, null, 'creation')) = 1, 'type filter';
+  assert (select count(*) from public.search_posts(null, null, null, null, null, null, null, null, 3000)) = 1, 'price max';
+  assert (select count(*) from public.search_posts(null, null, null, null, null, null, null, 4000, 5000)) = 2, 'price range';
+  assert (select count(*) from public.search_posts(null, null, null, null, null, null, 30)) = 2, 'radius around my city (Lyon)';
+  assert (select count(*) from public.search_posts(null, null, null, 75056, null, null, 10)) = 3, 'radius around a chosen city (Paris)';
+  assert (select count(*) from public.search_posts(null, null, null, null, 48.8566, 2.3522, 10)) = 3, 'radius around a GPS position';
+  assert (select count(*) from public.search_posts('vintage', null, null, null, null, null, 30)) = 0, 'text + radius combine';
+  assert (select count(*) from public.search_posts(null, null, null, null, null, null, null, null, null, 4)) = 0, 'minimum rating (no review yet)';
+  -- sort + pagination
+  assert (select price_cents from public.search_posts(null, null, null, null, null, null, null, null, null, null, 'price_asc', 1)) = 2000, 'cheapest first';
+  assert (select price_cents from public.search_posts(null, null, null, null, null, null, null, null, null, null, 'price_desc', 1)) = 6500, 'most expensive first';
+  assert (select city_name from public.search_posts(null, null, null, null, null, null, null, null, null, null, 'distance', 1)) = 'Lyon', 'closest first';
+  assert (select count(*) from public.search_posts(null, null, null, null, null, null, null, null, null, null, 'recent', 2, 4)) = 1, 'offset pagination';
+  assert (select array_agg(city_name) from public.search_posts(null, null, null, null, null, null, null, null, null, null, 'relevance', 5)) = array['Lyon', 'Lyon', 'Paris', 'Paris', 'Paris'], 'browsing: local posts first (0014)';
+  assert (select array_agg(city_name) from public.search_posts(null, null, null, 75056, null, null, null, null, null, null, 'relevance', 5)) = array['Paris', 'Paris', 'Paris', 'Lyon', 'Lyon'], 'browsing around another city';
+
+  -- directory
+  select count(*) into n from public.find_shops();
+  assert n = 1, 'shops within 30 km of my city, got ' || n;
+  select * into r from public.find_shops();
+  assert r.slug = 'sweetcakes' and r.distance_km = 0 and r.posts_count = 2 and not r.following, 'directory row';
+  assert (select count(*) from public.find_shops(null, 75056)) = 1, 'shops around Paris';
+  assert (select count(*) from public.find_shops(null, null, null, null, null)) = 2, 'no radius = everywhere';
+  assert (select slug from public.find_shops('drip')) = 'drip_vintage', 'shop by name, wherever it is';
+  assert (select slug from public.find_shops('sweet cake')) = 'sweetcakes', 'shop by fuzzy name';
+  assert (select count(*) from public.find_shops(null, null, null, null, null, (select id from public.categories where slug = 'fashion'))) = 1, 'shops selling in a category';
+end $$;
+-- a blocked seller disappears from search and from the directory
+select public.block_user('00000000-0000-0000-0000-000000000004');
+do $$ begin
+  assert (select count(*) from public.search_posts('vintage')) = 0 and (select count(*) from public.find_shops('drip')) = 0, 'blocked seller hidden from search';
+end $$;
+select public.unblock_user('00000000-0000-0000-0000-000000000004');
+
+-- alerts
+insert into public.search_alerts (user_id, query, city_id, radius_km, price_max_cents) values (auth.uid(), 'layer cake', 69123, 30, 5000);
+insert into public.search_alerts (user_id, category_id) values (auth.uid(), (select id from public.categories where slug = 'food'));
+update public.search_alerts set is_active = false where query = 'layer cake';
+select public.test_expect_error($q$insert into public.search_alerts (user_id, query) values ('00000000-0000-0000-0000-000000000003', 'x')$q$, 'row-level security');
+select public.test_expect_error($q$insert into public.search_alerts (user_id, city_id) values (auth.uid(), 69123)$q$, 'search_alerts_has_criterion');
+select public.test_expect_error($q$update public.search_alerts set query = 'hack'$q$, 'permission denied');
+do $$ begin
+  for i in 1..18 loop insert into public.search_alerts (user_id, query) values (auth.uid(), 'alerte ' || i); end loop;
+end $$;
+select public.test_expect_error($q$insert into public.search_alerts (user_id, query) values (auth.uid(), 'une de trop')$q$, 'TOO_MANY_ALERTS');
+delete from public.search_alerts where query like 'alerte %';
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000003","role":"authenticated","app_metadata":{}}', false);
+do $$ begin
+  assert (select count(*) from public.search_alerts) = 0, 'alerts of others are private';
+  assert (select count(*) from public.search_posts('number cake')) = 1, 'the author also finds their own post in search';
+  assert (select count(*) from public.find_shops('sweet')) = 0, 'my own shop is not in the directory';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000002","role":"authenticated","app_metadata":{}}', false);
+do $$ begin
+  assert (select count(*) from public.feed('nearby', 30)) = 2, 'feed nearby: my city by default';
+  assert (select count(*) from public.feed('nearby', 30, null, null, null, null, 10, 75056)) = 3, 'feed nearby: around a chosen city';
+  assert (select count(*) from public.feed('nearby', 30, null, null, 48.8566, 2.3522, 10, 69123)) = 3, 'feed nearby: GPS wins over the chosen city';
 end $$;
 reset role;
 SQL

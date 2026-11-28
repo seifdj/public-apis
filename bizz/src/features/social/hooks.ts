@@ -18,6 +18,7 @@ import {
   setSaved,
   unblockUser,
 } from '@/features/social/api';
+import { placeKey, usePlaceStore } from '@/store/place';
 
 type FeedPage = { items: FeedItem[]; next: FeedCursor | null };
 type FeedData = InfiniteData<FeedPage, FeedCursor | null>;
@@ -34,9 +35,12 @@ export const socialKeys = {
 
 export function useFeed(tab: FeedTab) {
   const userId = useUserId();
+  const place = usePlaceStore((s) => s.place);
+  const radiusKm = usePlaceStore((s) => s.radiusKm);
   return useInfiniteQuery({
-    queryKey: socialKeys.feed(tab),
-    queryFn: ({ pageParam }) => fetchFeedPage(tab, pageParam),
+    // "Près de moi" depends on the radius; the distance shown on every tab depends on the place
+    queryKey: [...socialKeys.feed(tab), placeKey(place), tab === 'nearby' ? radiusKm : 0],
+    queryFn: ({ pageParam }) => fetchFeedPage(tab, pageParam, place, radiusKm),
     initialPageParam: null as FeedCursor | null,
     getNextPageParam: (last) => last.next,
     enabled: !!userId,

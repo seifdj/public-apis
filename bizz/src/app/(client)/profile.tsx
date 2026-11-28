@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Ban, Bookmark, Heart, MapPin, Repeat, Store } from 'lucide-react-native';
+import { Ban, Bell, Bookmark, Heart, MapPin, Repeat, Store } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { AccountMenu } from '@/features/account/AccountMenu';
@@ -95,6 +95,7 @@ export default function ProfileScreen() {
       <GlassCard style={styles.block} padding={16}>
         <ListRow first icon={<Bookmark color={colors.primary} size={20} />} label={fr.library.saved} onPress={() => router.push('/saved')} />
         <ListRow icon={<Heart color={colors.primary} size={20} />} label={fr.library.following} onPress={() => router.push('/following')} />
+        <ListRow icon={<Bell color={colors.primary} size={20} />} label={fr.alerts.title} onPress={() => router.push('/alerts')} />
         <ListRow icon={<Ban color={colors.primary} size={20} />} label={fr.library.blocked} onPress={() => router.push('/blocked')} />
       </GlassCard>
 

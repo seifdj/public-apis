@@ -1,5 +1,5 @@
 /**
- * Generated from the Supabase project "Bizz" (migrations 0001-0011).
+ * Generated from the Supabase project "Bizz" (migrations 0001-0013).
  * Regenerate after each migration: `npx supabase gen types typescript --project-id <ref> > src/lib/database.types.ts`
  * then put this header and the aliases at the bottom back.
  */
@@ -883,6 +883,80 @@ export type Database = {
           },
         ]
       }
+      search_alerts: {
+        Row: {
+          category_id: number | null
+          city_id: number | null
+          created_at: string
+          id: string
+          is_active: boolean
+          last_notified_at: string | null
+          price_max_cents: number | null
+          price_min_cents: number | null
+          query: string | null
+          radius_km: number | null
+          type: Database["public"]["Enums"]["post_type"] | null
+          user_id: string
+        }
+        Insert: {
+          category_id?: number | null
+          city_id?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_notified_at?: string | null
+          price_max_cents?: number | null
+          price_min_cents?: number | null
+          query?: string | null
+          radius_km?: number | null
+          type?: Database["public"]["Enums"]["post_type"] | null
+          user_id: string
+        }
+        Update: {
+          category_id?: number | null
+          city_id?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_notified_at?: string | null
+          price_max_cents?: number | null
+          price_min_cents?: number | null
+          query?: string | null
+          radius_km?: number | null
+          type?: Database["public"]["Enums"]["post_type"] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_alerts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_alerts_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shops: {
         Row: {
           avatar_url: string | null
@@ -1052,6 +1126,7 @@ export type Database = {
       }
       feed: {
         Args: {
+          p_city_id?: number
           p_cursor_id?: string
           p_cursor_ts?: string
           p_lat?: number
@@ -1088,6 +1163,34 @@ export type Database = {
           status: Database["public"]["Enums"]["post_status"]
           title: string
           type: Database["public"]["Enums"]["post_type"]
+        }[]
+      }
+      find_shops: {
+        Args: {
+          p_category_id?: number
+          p_city_id?: number
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_query?: string
+          p_radius_km?: number
+        }
+        Returns: {
+          avatar_url: string
+          bio: string
+          city_name: string
+          department: string
+          distance_km: number
+          followers_count: number
+          following: boolean
+          id: string
+          is_founder: boolean
+          name: string
+          owner_id: string
+          posts_count: number
+          rating_avg: number
+          rating_count: number
+          slug: string
         }[]
       }
       get_my_profile: {
@@ -1188,6 +1291,52 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      search_posts: {
+        Args: {
+          p_category_id?: number
+          p_city_id?: number
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_min_rating?: number
+          p_offset?: number
+          p_price_max?: number
+          p_price_min?: number
+          p_query?: string
+          p_radius_km?: number
+          p_sort?: string
+          p_type?: Database["public"]["Enums"]["post_type"]
+        }
+        Returns: {
+          author_id: string
+          category_id: number
+          city_id: number
+          city_name: string
+          department: string
+          description: string
+          distance_km: number
+          following: boolean
+          hashtags: string[]
+          id: string
+          liked: boolean
+          likes_count: number
+          media: Json
+          price_cents: number
+          price_mode: Database["public"]["Enums"]["price_mode"]
+          published_at: string
+          rank_ts: string
+          saved: boolean
+          saves_count: number
+          shop_avatar_url: string
+          shop_id: string
+          shop_is_founder: boolean
+          shop_name: string
+          shop_slug: string
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+        }[]
       }
       set_active_mode: {
         Args: { p_mode: Database["public"]["Enums"]["active_mode"] }
@@ -1387,3 +1536,4 @@ export type City = Tables<"cities">
 export type Category = Tables<"categories">
 export type Post = Tables<"posts">
 export type PostMedia = Tables<"post_media">
+export type SearchAlert = Tables<"search_alerts">

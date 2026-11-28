@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Switch, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import type { CityLite } from '@/features/account/api';
 import { CityPicker } from '@/features/account/CityPicker';
@@ -11,8 +11,8 @@ import type { PostType, PriceMode } from '@/lib/database.types';
 import { toUserMessage } from '@/lib/errors';
 import { hashtagsToInput, parseHashtags } from '@/lib/hashtags';
 import { centsToInput, parsePriceInput, sanitizePriceInput } from '@/lib/price';
-import { colors, spacing } from '@/theme/theme';
-import { Chip, PillButton, Text, TextField } from '@/ui';
+import { spacing } from '@/theme/theme';
+import { Chip, PillButton, Text, TextField, Toggle } from '@/ui';
 
 const TYPES: PostType[] = ['object', 'service', 'creation', 'rental'];
 
@@ -147,14 +147,13 @@ export function PostForm({ initial, submitLabel, onSubmit }: PostFormProps) {
           <Text variant="label" tone="secondary">
             {fr.post.onQuote}
           </Text>
-          <Switch
+          <Toggle
             accessibilityLabel={fr.post.onQuote}
             value={onQuote}
             onValueChange={(v) => {
               setOnQuote(v);
               clear('price');
             }}
-            trackColor={{ true: colors.primary }}
             testID="post-on-quote"
           />
         </View>
@@ -178,8 +177,26 @@ export function PostForm({ initial, submitLabel, onSubmit }: PostFormProps) {
         error={errors.category}
       />
 
-      <TextField label={fr.post.description} optional={fr.common.optional} value={description} onChangeText={setDescription} placeholder={fr.post.descriptionPlaceholder} maxLength={1000} multiline testID="post-description" />
-      <TextField label={fr.post.hashtags} optional={fr.common.optional} value={hashtags} onChangeText={setHashtags} placeholder={fr.post.hashtagsPlaceholder} autoCapitalize="none" autoCorrect={false} testID="post-hashtags" />
+      <TextField
+        label={fr.post.description}
+        optional={fr.common.optional}
+        value={description}
+        onChangeText={setDescription}
+        placeholder={fr.post.descriptionPlaceholder}
+        maxLength={1000}
+        multiline
+        testID="post-description"
+      />
+      <TextField
+        label={fr.post.hashtags}
+        optional={fr.common.optional}
+        value={hashtags}
+        onChangeText={setHashtags}
+        placeholder={fr.post.hashtagsPlaceholder}
+        autoCapitalize="none"
+        autoCorrect={false}
+        testID="post-hashtags"
+      />
 
       {serverError ? (
         <Text variant="caption" tone="danger" align="center" accessibilityLiveRegion="polite" testID="post-error">

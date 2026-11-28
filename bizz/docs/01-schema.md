@@ -870,6 +870,17 @@ Les migrations font foi. Différences avec le texte ci-dessus :
 - Blocage par `block_user` / `unblock_user` : supprime les abonnements dans les deux sens, masque publications et boutique dans les deux sens.
 - `updated_at` des publications et boutiques ne change plus quand seul un compteur bouge.
 
+## 7.7 Écarts entre ce document et les migrations (étape 5)
+
+- `search_posts(texte, catégorie, type, ville, position, rayon, prix min, prix max, note min, tri, limite, décalage)` : une seule fonction pour la recherche et le parcours par catégorie. Elle renvoie les mêmes colonnes que `feed`, avec les droits de l'appelant (RLS et blocages appliqués).
+- Texte : recherche plein texte en français (pluriels, accents, casse), tolérance aux fautes par `word_similarity` (seuil 0,45) sur le titre et les hashtags, et correspondance sur le nom de la boutique.
+- Tri « Pertinence » : pertinence arrondie au dixième, puis les publications à moins de 50 km du point de référence, puis les plus récentes. Sans texte, le parcours montre donc d'abord le local. Autres tris : récent, prix croissant ou décroissant, distance.
+- Pagination par décalage (24 par page, 48 au maximum). Suffisant à ce volume, à revoir avec le classement du feed.
+- Point de référence commun au feed, à la recherche et à l'annuaire, par `private.search_origin` : position GPS si elle est fournie, sinon ville choisie, sinon ville du profil. `feed` gagne le paramètre `p_city_id` (migration 0013).
+- La position GPS n'est jamais enregistrée : elle part en paramètre des requêtes et reste dans la mémoire de l'app.
+- `find_shops(texte, ville, position, rayon, catégorie, limite)` : annuaire « Vendeurs près de toi » trié par distance, ou boutiques par nom (approximatif) sans limite de rayon.
+- `search_alerts` : au moins un mot-clé ou une catégorie, 20 alertes par personne au maximum (`TOO_MANY_ALERTS`), lecture et écriture réservées au propriétaire. L'envoi des notifications arrive à l'étape 6.
+
 ## 8. Données de démo (seed)
 
 `supabase/seed.sql` + script `scripts/seed-demo.ts` (images libres de droits via Unsplash, téléchargées une fois dans Storage) :

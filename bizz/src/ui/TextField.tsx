@@ -13,24 +13,28 @@ export interface TextFieldProps extends TextInputProps {
   left?: ReactNode;
   right?: ReactNode;
   optional?: string;
+  /** Hides the visible label (search bars); the label stays as the accessible name. */
+  hideLabel?: boolean;
   ref?: Ref<ComponentRef<typeof TextInput>>;
 }
 
-export function TextField({ label, hint, error, success, left, right, optional, style, onFocus, onBlur, multiline, ref, ...rest }: TextFieldProps) {
+export function TextField({ label, hint, error, success, left, right, optional, hideLabel = false, style, onFocus, onBlur, multiline, ref, ...rest }: TextFieldProps) {
   const [focused, setFocused] = useState(false);
   const message = error ?? success ?? hint;
   return (
     <View style={styles.root}>
-      <View style={styles.labelRow}>
-        <Text variant="label" tone="secondary">
-          {label}
-        </Text>
-        {optional ? (
-          <Text variant="label" tone="muted">
-            {optional}
+      {hideLabel ? null : (
+        <View style={styles.labelRow}>
+          <Text variant="label" tone="secondary">
+            {label}
           </Text>
-        ) : null}
-      </View>
+          {optional ? (
+            <Text variant="label" tone="muted">
+              {optional}
+            </Text>
+          ) : null}
+        </View>
+      )}
       <View style={[styles.box, multiline && styles.boxMultiline, focused && styles.boxFocused, !!error && styles.boxError]}>
         {left}
         <TextInput
