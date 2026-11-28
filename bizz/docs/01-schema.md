@@ -847,6 +847,18 @@ Points à retenir :
 - `moderation_actions` after insert : notification au propriétaire de la boutique avec le motif.
 - Realtime : publication `supabase_realtime` sur `messages`, `conversations`, `notifications` (la RLS s'applique aux abonnements).
 
+## 7.5 Écarts entre ce document et les migrations (étape 3)
+
+Les migrations font foi. Différences avec le texte ci-dessus :
+- `update_post(post_id, payload)` : toute modification du contenu passe par cette fonction, pour repasser le filtre de mots-clés. Seul `status` se modifie directement.
+- Mots interdits : recherche par **mot entier** (pluriel accepté), pas par sous-chaîne. « arme » ne bloque pas « parmesan » ni « charme ».
+- Les mots de gravité `flag` créent une entrée dans `private.job_queue` (`keyword_flag`), transformée en signalement à l'étape 10.
+- `posts.search_vector` est calculé par `private.post_search_vector()`.
+- Une publication dont `expires_at` est dépassée est traitée comme expirée par la RLS, sans attendre la tâche planifiée (étape 6).
+- `delete_post(post_id)` : suppression logique par l'auteur.
+- Les fichiers remplacés ou supprimés restent dans le bucket `post-media` : nettoyage à prévoir avec les tâches planifiées (étape 6).
+- Bizz+ (`subscriptions`) n'existe pas encore : `get_post_allowance().has_bizzplus` vaut `false` jusqu'à l'étape 9.
+
 ## 8. Données de démo (seed)
 
 `supabase/seed.sql` + script `scripts/seed-demo.ts` (images libres de droits via Unsplash, téléchargées une fois dans Storage) :

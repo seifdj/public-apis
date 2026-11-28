@@ -43,6 +43,7 @@ export function useInvalidateAccount() {
     await Promise.all([
       client.invalidateQueries({ queryKey: queryKeys.profile(userId) }),
       client.invalidateQueries({ queryKey: queryKeys.myShop(userId) }),
+      client.invalidateQueries({ queryKey: ['shop'] }), // public shop pages, whatever the slug
     ]);
   };
 }

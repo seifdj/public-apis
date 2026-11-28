@@ -24,13 +24,15 @@ export interface StatusBadgeProps {
   label?: string;
   /** Icon-only: a check mark in the badge colours. */
   hideText?: boolean;
+  /** Opaque white background, for badges drawn over a photo. */
+  solid?: boolean;
 }
 
-export function StatusBadge({ kind, label, hideText = false }: StatusBadgeProps) {
+export function StatusBadge({ kind, label, hideText = false, solid = false }: StatusBadgeProps) {
   const c = config[kind];
   const text = label ?? c.label;
   return (
-    <View style={[styles.base, hideText && styles.iconOnly, { backgroundColor: c.bg }]} accessibilityLabel={text}>
+    <View style={[styles.base, hideText && styles.iconOnly, { backgroundColor: solid ? colors.background : c.bg }]} accessibilityLabel={text}>
       {hideText ? (
         <Check color={c.fg} size={14} strokeWidth={3} />
       ) : (

@@ -45,6 +45,11 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         <Stack.Screen name="open-shop" />
         <Stack.Screen name="verify-phone" />
         <Stack.Screen name="publish" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="publish-more" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="post/[id]/index" />
+        <Stack.Screen name="post/[id]/edit" />
+        <Stack.Screen name="shop/[slug]" />
+        <Stack.Screen name="shop-edit" />
       </Stack.Protected>
       <Stack.Screen name="legal/[doc]" options={{ presentation: 'modal' }} />
       <Stack.Screen name="(gallery)" />

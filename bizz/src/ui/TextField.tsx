@@ -78,6 +78,7 @@ const styles = StyleSheet.create({
   boxMultiline: { alignItems: 'flex-start', paddingVertical: spacing.md },
   boxFocused: { borderColor: colors.primary },
   boxError: { borderColor: colors.danger },
-  input: { flex: 1, minHeight: sizes.touchMin, fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.text, paddingVertical: 0 },
+  // minWidth 0 lets the input shrink beside a suffix; the box already shows focus, so no web outline.
+  input: { flex: 1, minWidth: 0, minHeight: sizes.touchMin, fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.text, paddingVertical: 0, outlineWidth: 0 },
   inputMultiline: { minHeight: 84, textAlignVertical: 'top' },
 });

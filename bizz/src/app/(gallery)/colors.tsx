@@ -35,8 +35,8 @@ export default function ColorsScreen() {
       <GlassCard style={styles.card}>
         <Text variant="h3">Contraste</Text>
         <Text tone="secondary">Texte secondaire sur blanc (#55516E) : 7,2:1</Text>
-        <Text tone="accent">Orange texte sur blanc (#D9700A) : 3,3:1, réservé aux prix en gras ≥ 18 px</Text>
-        <Text tone="primary">Marine sur blanc (#163E6F) : 10,1:1</Text>
+        <Text tone="accent">Orange texte sur blanc (#D96500) : 3,6:1, réservé aux prix en gras ≥ 18 px</Text>
+        <Text tone="primary">Marine sur blanc (#12498F) : 8,8:1</Text>
       </GlassCard>
     </Screen>
   );

@@ -46,3 +46,7 @@ Chaque point ci-dessous a un impact sur le coût, sur la validation des stores, 
 8. **Villes** : table `cities` chargée depuis le référentiel officiel des communes (code INSEE, nom, département, coordonnées). Le picker de ville cherche dedans. Évite les villes saisies à la main et rend « Près de moi » fiable.
 9. **Nom de l'app** : `src/config/brand.ts` exporte `APP_NAME = 'Bizz'`, `APP_NAME_PLUS = 'Bizz+'`, les URL et le scheme. Aucun « Bizz » en dur ailleurs.
 10. **Dépôt** : l'app Expo aura son propre dépôt (`bizz-app`) avec `supabase/` à la racine. Ce dépôt-ci n'est pas adapté.
+
+## E. Ajustements validés en cours de route
+
+- **28/11 — couleurs légèrement plus vives** : marine `#163E6F` → `#12498F`, orange `#EF8412` → `#FF8A0A`, orange texte `#D9700A` → `#D96500`, halos un peu plus présents. Danger et succès inchangés. Tout est dans `src/theme/theme.ts`.

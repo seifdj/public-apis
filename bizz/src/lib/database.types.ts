@@ -1,6 +1,7 @@
 /**
- * Generated from the Supabase project "Bizz" (migrations 0001-0008; shops and step 2 functions added by hand, regenerate when possible).
+ * Generated from the Supabase project "Bizz" (migrations 0001-0010).
  * Regenerate after each migration: `npx supabase gen types typescript --project-id <ref> > src/lib/database.types.ts`
+ * then put this header and the aliases at the bottom back.
  */
 export type Json =
   | string
@@ -217,6 +218,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_post_usage: {
+        Row: {
+          count: number
+          day: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          day: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_post_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_post_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_tokens: {
         Row: {
           created_at: string
@@ -255,6 +289,239 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_credits: {
+        Row: {
+          amount: number
+          created_at: string
+          expires_at: string
+          id: string
+          note: string | null
+          purchase_id: string | null
+          remaining: number
+          source: Database["public"]["Enums"]["credit_source"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          note?: string | null
+          purchase_id?: string | null
+          remaining: number
+          source: Database["public"]["Enums"]["credit_source"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          purchase_id?: string | null
+          remaining?: number
+          source?: Database["public"]["Enums"]["credit_source"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_media: {
+        Row: {
+          blurhash: string | null
+          created_at: string
+          duration_s: number | null
+          height: number | null
+          id: string
+          kind: Database["public"]["Enums"]["media_kind"]
+          mux_asset_id: string | null
+          mux_playback_id: string | null
+          mux_upload_id: string | null
+          position: number
+          post_id: string
+          storage_path: string | null
+          video_state: Database["public"]["Enums"]["video_state"] | null
+          width: number | null
+        }
+        Insert: {
+          blurhash?: string | null
+          created_at?: string
+          duration_s?: number | null
+          height?: number | null
+          id?: string
+          kind: Database["public"]["Enums"]["media_kind"]
+          mux_asset_id?: string | null
+          mux_playback_id?: string | null
+          mux_upload_id?: string | null
+          position?: number
+          post_id: string
+          storage_path?: string | null
+          video_state?: Database["public"]["Enums"]["video_state"] | null
+          width?: number | null
+        }
+        Update: {
+          blurhash?: string | null
+          created_at?: string
+          duration_s?: number | null
+          height?: number | null
+          id?: string
+          kind?: Database["public"]["Enums"]["media_kind"]
+          mux_asset_id?: string | null
+          mux_playback_id?: string | null
+          mux_upload_id?: string | null
+          position?: number
+          post_id?: string
+          storage_path?: string | null
+          video_state?: Database["public"]["Enums"]["video_state"] | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_media_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          author_id: string
+          bumped_at: string
+          category_id: number
+          city_id: number
+          conversations_count: number
+          created_at: string
+          currency: string
+          deleted_at: string | null
+          description: string | null
+          expires_at: string
+          hashtags: string[]
+          id: string
+          likes_count: number
+          location: unknown
+          price_cents: number | null
+          price_mode: Database["public"]["Enums"]["price_mode"]
+          published_at: string
+          saves_count: number
+          search_vector: unknown
+          shop_id: string
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+          updated_at: string
+          views_count: number
+          visibility: Database["public"]["Enums"]["visibility"]
+        }
+        Insert: {
+          author_id: string
+          bumped_at?: string
+          category_id: number
+          city_id: number
+          conversations_count?: number
+          created_at?: string
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          expires_at: string
+          hashtags?: string[]
+          id?: string
+          likes_count?: number
+          location: unknown
+          price_cents?: number | null
+          price_mode?: Database["public"]["Enums"]["price_mode"]
+          published_at?: string
+          saves_count?: number
+          search_vector?: unknown
+          shop_id: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+          updated_at?: string
+          views_count?: number
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Update: {
+          author_id?: string
+          bumped_at?: string
+          category_id?: number
+          city_id?: number
+          conversations_count?: number
+          created_at?: string
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          expires_at?: string
+          hashtags?: string[]
+          id?: string
+          likes_count?: number
+          location?: unknown
+          price_cents?: number | null
+          price_mode?: Database["public"]["Enums"]["price_mode"]
+          published_at?: string
+          saves_count?: number
+          search_vector?: unknown
+          shop_id?: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["post_type"]
+          updated_at?: string
+          views_count?: number
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -509,20 +776,8 @@ export type Database = {
         }
         Returns: undefined
       }
-      is_username_available: { Args: { p_username: string }; Returns: boolean }
-      open_shop: {
-        Args: {
-          p_bio?: string
-          p_city_id?: number
-          p_instagram?: string
-          p_name: string
-          p_snapchat?: string
-          p_tiktok?: string
-          p_whatsapp?: string
-        }
-        Returns: string
-      }
-      request_account_deletion: { Args: never; Returns: undefined }
+      create_post: { Args: { p: Json }; Returns: string }
+      delete_post: { Args: { p_post_id: string }; Returns: undefined }
       get_my_profile: {
         Args: never
         Returns: {
@@ -556,6 +811,31 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_post_allowance: {
+        Args: never
+        Returns: {
+          can_post: boolean
+          credits: number
+          free_daily: number
+          has_bizzplus: boolean
+          next_reset: string
+          used_today: number
+        }[]
+      }
+      is_username_available: { Args: { p_username: string }; Returns: boolean }
+      open_shop: {
+        Args: {
+          p_bio?: string
+          p_city_id?: number
+          p_instagram?: string
+          p_name: string
+          p_snapchat?: string
+          p_tiktok?: string
+          p_whatsapp?: string
+        }
+        Returns: string
+      }
+      request_account_deletion: { Args: never; Returns: undefined }
       search_cities: {
         Args: { max_results?: number; q: string }
         Returns: {
@@ -580,6 +860,7 @@ export type Database = {
         Args: { p_mode: Database["public"]["Enums"]["active_mode"] }
         Returns: undefined
       }
+      update_post: { Args: { p: Json; p_post_id: string }; Returns: undefined }
     }
     Enums: {
       active_mode: "client" | "seller"
@@ -741,11 +1022,34 @@ export type Enums<
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
 // Convenience aliases used across the app.
 export type UserRole = Enums<"user_role">
 export type ActiveMode = Enums<"active_mode">
 export type ModerationScope = Enums<"moderation_scope">
+export type PostType = Enums<"post_type">
+export type PostStatus = Enums<"post_status">
+export type PriceMode = Enums<"price_mode">
 export type Profile = Tables<"profiles">
 export type PublicProfile = Tables<"public_profiles">
 export type Shop = Tables<"shops">
 export type City = Tables<"cities">
+export type Category = Tables<"categories">
+export type Post = Tables<"posts">
+export type PostMedia = Tables<"post_media">

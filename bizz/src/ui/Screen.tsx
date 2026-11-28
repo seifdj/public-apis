@@ -25,8 +25,8 @@ function Halo({ color, size, style }: { color: string; size: number; style: View
       <Svg width={size} height={size}>
         <Defs>
           <RadialGradient id={id} cx="50%" cy="50%" r="50%">
-            <Stop offset="0" stopColor={color} stopOpacity={0.22} />
-            <Stop offset="0.55" stopColor={color} stopOpacity={0.1} />
+            <Stop offset="0" stopColor={color} stopOpacity={0.26} />
+            <Stop offset="0.55" stopColor={color} stopOpacity={0.12} />
             <Stop offset="1" stopColor={color} stopOpacity={0} />
           </RadialGradient>
         </Defs>

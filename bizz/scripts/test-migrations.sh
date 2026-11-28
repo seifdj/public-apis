@@ -8,6 +8,10 @@ cd "$(dirname "$0")/.."
 DB="bizz_migration_test"
 PSQL=${PSQL:-"sudo -u postgres psql -v ON_ERROR_STOP=1 -q"}
 
+if ! $PSQL -c "select 1" >/dev/null 2>&1; then
+  echo "Postgres local injoignable. Lance-le (ex. : sudo service postgresql start) puis relance." >&2
+  exit 1
+fi
 $PSQL -c "drop database if exists $DB" >/dev/null 2>&1
 $PSQL -c "create database $DB" >/dev/null
 P="$PSQL -d $DB"
@@ -97,8 +101,9 @@ do $$ declare leaked text; begin
        'public.set_active_mode', 'public.search_cities', 'public.get_my_profile',
        'public.is_username_available', 'public.complete_profile', 'public.open_shop',
        'public.request_account_deletion', 'public.cancel_account_deletion',
+       'public.get_post_allowance', 'public.create_post', 'public.update_post', 'public.delete_post',
        'private.is_admin', 'private.is_moderator', 'private.mod_covers', 'private.is_blocked_between',
-       'private.paris_today', 'private.immutable_unaccent');
+       'private.paris_today', 'private.immutable_unaccent', 'private.post_search_vector');
   assert leaked is null, 'unexpected functions executable by authenticated: ' || leaked;
   select string_agg(n.nspname || '.' || p.proname, ', ') into leaked
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -342,6 +347,184 @@ do $$ begin
   assert (select deleted_at is null from public.get_my_profile()), 'deletion cancelled';
   assert (select count(*) from public.shops where owner_id = auth.uid() and deleted_at is null) = 1, 'shop restored';
 end $$;
+reset role;
+
+-- 11. Step 3: publishing, quota, credits, banned keywords, statuses, visibility.
+-- user 3 = seller "sweetcakes" (phone verified), user 4 = seller "drip_vintage", user 2 = client.
+create function public.test_post_payload(p_title text, p_paths text[], p_extra jsonb default '{}') returns jsonb language sql as $f$
+  select jsonb_build_object('type', 'creation', 'title', p_title, 'description', 'Sur commande, retrait sur place.',
+           'hashtags', jsonb_build_array('#Layer Cake', 'ANNIV', 'anniv'), 'price_mode', 'fixed', 'price_cents', 3500,
+           'category_id', (select id from public.categories where slug = 'food'), 'city_id', 69123,
+           'media', (select jsonb_agg(jsonb_build_object('kind', 'image', 'storage_path', x, 'width', 1200, 'height', 1500)) from unnest(p_paths) x)) || p_extra
+$f$;
+grant execute on function public.test_post_payload(text, text[], jsonb) to authenticated;
+create table public.test_ids (k text primary key, v uuid);
+grant all on public.test_ids to authenticated;
+insert into storage.buckets (id, name, public) values ('post-media', 'post-media', true) on conflict do nothing;
+update public.app_settings set value = '1' where key = 'quota.free_daily';
+
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000003","role":"authenticated","app_metadata":{}}', false);
+insert into storage.objects (bucket_id, name, owner) values
+  ('post-media', '00000000-0000-0000-0000-000000000003/a.jpg', auth.uid()),
+  ('post-media', '00000000-0000-0000-0000-000000000003/b.jpg', auth.uid()),
+  ('post-media', '00000000-0000-0000-0000-000000000003/c.jpg', auth.uid());
+select public.test_expect_error($q$insert into storage.objects (bucket_id, name) values ('post-media', '00000000-0000-0000-0000-000000000004/x.jpg')$q$, 'row-level security');
+do $$ declare a record; begin
+  select * into a from public.get_post_allowance();
+  assert a.free_daily = 1 and a.used_today = 0 and a.credits = 0 and a.can_post, 'fresh allowance';
+  assert a.next_reset > now() and a.next_reset <= now() + interval '25 hours', 'next reset is the coming Paris midnight';
+end $$;
+
+-- invalid content never consumes quota
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Ab', array['00000000-0000-0000-0000-000000000003/a.jpg']))$q$, 'INVALID_TITLE');
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Layer cake', array['00000000-0000-0000-0000-000000000003/a.jpg'], '{"price_cents": null}'))$q$, 'INVALID_PRICE');
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Layer cake', array['00000000-0000-0000-0000-000000000003/a.jpg'], '{"category_id": 9999}'))$q$, 'INVALID_CATEGORY');
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Layer cake', array['00000000-0000-0000-0000-000000000003/missing.jpg']))$q$, 'INVALID_MEDIA');
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Layer cake', array['00000000-0000-0000-0000-000000000004/x.jpg']))$q$, 'INVALID_MEDIA');
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Layer cake', array[]::text[]) || '{"media": []}')$q$, 'INVALID_MEDIA');
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Puffs goût fraise', array['00000000-0000-0000-0000-000000000003/a.jpg']))$q$, 'FORBIDDEN_CONTENT');
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Vente d ARMES de collection', array['00000000-0000-0000-0000-000000000003/a.jpg']))$q$, 'FORBIDDEN_CONTENT');
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Bonbons', array['00000000-0000-0000-0000-000000000003/a.jpg'], '{"description": "avec des médicaments"}'))$q$, 'FORBIDDEN_CONTENT');
+do $$ begin
+  assert (select used_today from public.get_post_allowance()) = 0, 'rejected posts must not consume quota';
+end $$;
+
+-- first post of the day: free. Whole words only: "parmesan" and "charme" contain "arme" but pass.
+insert into public.test_ids select 'p1', public.create_post(public.test_post_payload('Plateau parmesan plein de charme',
+  array['00000000-0000-0000-0000-000000000003/a.jpg', '00000000-0000-0000-0000-000000000003/b.jpg', '00000000-0000-0000-0000-000000000003/c.jpg']));
+do $$ declare p public.posts; a record; begin
+  select * into p from public.posts where id = (select v from public.test_ids where k = 'p1');
+  assert p.status = 'available' and p.visibility = 'visible' and p.price_cents = 3500, 'post created';
+  assert p.hashtags = array['layercake', 'anniv'], 'hashtags sanitized and deduplicated: ' || p.hashtags::text;
+  assert p.expires_at between now() + interval '59 days' and now() + interval '61 days', 'expires in 60 days';
+  assert extensions.ST_Distance(p.location, (select location from public.cities where id = 69123)) = 0, 'post location = city';
+  assert p.search_vector @@ to_tsquery('french', 'parmesan'), 'search vector filled';
+  assert (select count(*) from public.post_media where post_id = p.id) = 3, 'three photos';
+  assert (select array_agg(position order by position) from public.post_media where post_id = p.id) = array[0, 1, 2]::smallint[], 'photo order kept';
+  assert (select posts_count from public.shops where owner_id = auth.uid()) = 1, 'shop posts_count';
+  select * into a from public.get_post_allowance();
+  assert a.used_today = 1 and not a.can_post, 'free post consumed';
+end $$;
+
+-- second post the same day: refused
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Number cake 20 parts', array['00000000-0000-0000-0000-000000000003/a.jpg']))$q$, 'QUOTA_EXCEEDED');
+
+-- editing and changing the status never consume quota
+select public.update_post((select v from public.test_ids where k = 'p1'),
+  public.test_post_payload('Layer cake perso 8 parts', array['00000000-0000-0000-0000-000000000003/b.jpg'], '{"price_mode": "on_quote", "price_cents": null, "city_id": 75056}'));
+update public.posts set status = 'reserved' where id = (select v from public.test_ids where k = 'p1');
+do $$ declare p public.posts; begin
+  select * into p from public.posts where id = (select v from public.test_ids where k = 'p1');
+  assert p.title = 'Layer cake perso 8 parts' and p.price_mode = 'on_quote' and p.price_cents is null, 'post edited';
+  assert p.city_id = 75056 and extensions.ST_Distance(p.location, (select location from public.cities where id = 75056)) = 0, 'city and location edited';
+  assert p.status = 'reserved', 'status changed by the seller';
+  assert (select count(*) from public.post_media where post_id = p.id) = 1, 'media replaced';
+  assert (select used_today from public.get_post_allowance()) = 1, 'editing is free';
+end $$;
+select public.test_expect_error($q$select public.update_post((select v from public.test_ids where k = 'p1'), public.test_post_payload('Puff pas chère', array['00000000-0000-0000-0000-000000000003/b.jpg']))$q$, 'FORBIDDEN_CONTENT');
+select public.test_expect_error($q$update public.posts set status = 'expired' where id = (select v from public.test_ids where k = 'p1')$q$, 'INVALID_STATUS');
+select public.test_expect_error($q$update public.posts set title = 'x' where author_id = auth.uid()$q$, 'permission denied');
+select public.test_expect_error($q$update public.posts set visibility = 'visible', bumped_at = now() where author_id = auth.uid()$q$, 'permission denied');
+select public.test_expect_error($q$insert into public.posts (shop_id, author_id, type, title, category_id, city_id, location, expires_at) select s.id, auth.uid(), 'object', 'direct insert', 1, 69123, s.location, now() from public.shops s where s.owner_id = auth.uid()$q$, 'permission denied');
+select public.test_expect_error($q$update public.daily_post_usage set count = 0$q$, 'permission denied');
+select public.test_expect_error($q$insert into public.post_credits (user_id, source, amount, remaining, expires_at) values (auth.uid(), 'admin', 99, 99, now() + interval '1 day')$q$, 'permission denied');
+reset role;
+
+-- credits: the one closest to expiry goes first; expired credits are ignored
+insert into public.post_credits (user_id, source, amount, remaining, expires_at, note) values
+  ('00000000-0000-0000-0000-000000000003', 'admin', 5, 5, now() - interval '1 day', 'expired'),
+  ('00000000-0000-0000-0000-000000000003', 'admin', 2, 2, now() + interval '20 days', 'late'),
+  ('00000000-0000-0000-0000-000000000003', 'admin', 1, 1, now() + interval '3 days', 'soon');
+set role authenticated;
+do $$ declare a record; begin
+  select * into a from public.get_post_allowance();
+  assert a.credits = 3 and a.can_post, 'three usable credits (expired ones ignored)';
+end $$;
+insert into public.test_ids select 'p2', public.create_post(public.test_post_payload('Number cake 20 parts', array['00000000-0000-0000-0000-000000000003/a.jpg']));
+reset role;
+do $$ begin
+  assert (select remaining from public.post_credits where note = 'soon') = 0, 'credit closest to expiry used first';
+  assert (select remaining from public.post_credits where note = 'late') = 2, 'later credit untouched';
+  assert (select remaining from public.post_credits where note = 'expired') = 5, 'expired credit untouched';
+  assert (select count from public.daily_post_usage where user_id = '00000000-0000-0000-0000-000000000003') = 1, 'daily counter unchanged when a credit is used';
+end $$;
+
+-- "flag" keywords publish but queue a moderation job
+set role authenticated;
+insert into public.test_ids select 'p3', public.create_post(public.test_post_payload('Sac réplique de créateur', array['00000000-0000-0000-0000-000000000003/c.jpg']));
+reset role;
+do $$ begin
+  assert (select count(*) from private.job_queue where kind = 'keyword_flag' and payload->>'term' = 'réplique') = 1, 'flag keyword queued for moderation';
+  assert private.grant_post_credits('00000000-0000-0000-0000-000000000003', 3, 'admin', 'test') is not null, 'grant_post_credits';
+  assert (select expires_at from public.post_credits where note = 'test') between now() + interval '29 days' and now() + interval '31 days', 'credits valid 30 days';
+end $$;
+
+-- a new Paris day resets the free publication
+update public.daily_post_usage set day = day - 1 where user_id = '00000000-0000-0000-0000-000000000003';
+set role authenticated;
+do $$ declare a record; begin
+  select * into a from public.get_post_allowance();
+  assert a.used_today = 0 and a.can_post, 'counter back to zero on a new day';
+end $$;
+
+-- visibility for another signed-in user (user 2, client)
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000002","role":"authenticated","app_metadata":{}}', false);
+do $$ begin
+  assert (select count(*) from public.posts) = 3, 'client sees the 3 visible posts (reserved included)';
+  assert (select count(*) from public.post_media) = 3, 'and their photos';
+  assert (select count(*) from public.daily_post_usage) = 0 and (select count(*) from public.post_credits) = 0, 'quota rows of others are private';
+end $$;
+update public.posts set status = 'sold';
+select public.test_expect_error($q$select public.update_post((select v from public.test_ids where k = 'p1'), public.test_post_payload('Hack', array['00000000-0000-0000-0000-000000000003/a.jpg']))$q$, 'POST_NOT_FOUND');
+select public.test_expect_error($q$select public.delete_post((select v from public.test_ids where k = 'p1'))$q$, 'POST_NOT_FOUND');
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Annonce client', array['00000000-0000-0000-0000-000000000003/a.jpg']))$q$, 'NO_SHOP');
+insert into public.blocks (blocker_id, blocked_id) values (auth.uid(), '00000000-0000-0000-0000-000000000003') on conflict do nothing;
+do $$ begin
+  assert (select count(*) from public.posts) = 0, 'posts of a blocked seller disappear';
+end $$;
+delete from public.blocks where blocker_id = auth.uid();
+reset role;
+do $$ begin
+  assert (select count(*) from public.posts where status = 'sold') = 0, 'a client cannot change the status of someone else''s post';
+end $$;
+
+-- hidden by moderation / expired / deleted / suspended shop: gone for others, still there for the author
+update public.posts set visibility = 'hidden_by_moderation' where id = (select v from public.test_ids where k = 'p2');
+update public.posts set expires_at = now() - interval '1 minute' where id = (select v from public.test_ids where k = 'p3');
+set role authenticated;
+do $$ begin
+  assert (select count(*) from public.posts) = 1, 'hidden and expired posts are invisible to others';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000003","role":"authenticated","app_metadata":{}}', false);
+do $$ begin
+  assert (select count(*) from public.posts) = 3, 'the author still sees all their posts';
+  assert (select posts_count from public.shops where owner_id = auth.uid()) = 2, 'posts_count ignores hidden posts';
+end $$;
+select public.test_expect_error($q$update public.posts set status = 'reserved' where id = (select v from public.test_ids where k = 'p3')$q$, 'POST_EXPIRED');
+select public.delete_post((select v from public.test_ids where k = 'p1'));
+do $$ begin
+  assert (select count(*) from public.posts) = 2, 'deleted post gone for the author too';
+  assert (select posts_count from public.shops where owner_id = auth.uid()) = 1, 'posts_count after delete';
+end $$;
+reset role;
+update public.shops set status = 'suspended' where slug = 'sweetcakes';
+update public.posts set expires_at = now() + interval '10 days', visibility = 'visible' where author_id = '00000000-0000-0000-0000-000000000003' and deleted_at is null;
+set role authenticated;
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Encore un gâteau', array['00000000-0000-0000-0000-000000000003/a.jpg']))$q$, 'SHOP_SUSPENDED');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000002","role":"authenticated","app_metadata":{}}', false);
+do $$ begin
+  assert (select count(*) from public.posts) = 0, 'posts of a suspended shop are hidden';
+end $$;
+reset role;
+update public.shops set status = 'active' where slug = 'sweetcakes';
+
+-- phone not verified: cannot publish
+update public.profiles set phone_verified = false where id = '00000000-0000-0000-0000-000000000004';
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000004","role":"authenticated","app_metadata":{}}', false);
+insert into storage.objects (bucket_id, name, owner) values ('post-media', '00000000-0000-0000-0000-000000000004/a.jpg', auth.uid());
+select public.test_expect_error($q$select public.create_post(public.test_post_payload('Veste vintage', array['00000000-0000-0000-0000-000000000004/a.jpg']))$q$, 'PHONE_NOT_VERIFIED');
 reset role;
 SQL
 

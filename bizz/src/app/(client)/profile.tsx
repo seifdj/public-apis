@@ -1,13 +1,18 @@
-import { useRouter } from 'expo-router';
-import { MapPin, Repeat, Store } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { useRouter } from "expo-router";
+import { MapPin, Repeat, Store } from "lucide-react-native";
+import { StyleSheet, View } from "react-native";
 
-import { AccountMenu } from '@/features/account/AccountMenu';
-import { formatCity } from '@/features/account/CityPicker';
-import { useCity, useMyProfile, useSwitchMode } from '@/features/account/hooks';
-import { fr } from '@/i18n/fr';
-import { colors, sizes, spacing } from '@/theme/theme';
-import { Avatar, GlassCard, PillButton, Screen, Text } from '@/ui';
+import { AccountMenu } from "@/features/account/AccountMenu";
+import { formatCity } from "@/features/account/CityPicker";
+import {
+  useCity,
+  useMyProfile,
+  useMyShop,
+  useSwitchMode,
+} from "@/features/account/hooks";
+import { fr } from "@/i18n/fr";
+import { colors, sizes, spacing } from "@/theme/theme";
+import { Avatar, GlassCard, PillButton, Screen, Text } from "@/ui";
 
 /** Client profile: identity, "Ouvre ta boutique" or "Mode prestataire", account settings. */
 export default function ProfileScreen() {
@@ -15,6 +20,7 @@ export default function ProfileScreen() {
   const profile = useMyProfile().data;
   const city = useCity(profile?.city_id).data;
   const switchMode = useSwitchMode();
+  const shop = useMyShop().data;
   if (!profile) return <Screen withTabBar>{null}</Screen>;
 
   return (
@@ -23,7 +29,11 @@ export default function ProfileScreen() {
 
       <GlassCard size="xl" style={styles.block}>
         <View style={styles.identity}>
-          <Avatar name={profile.display_name} uri={profile.avatar_url} size={sizes.avatarLg} />
+          <Avatar
+            name={profile.display_name}
+            uri={profile.avatar_url}
+            size={sizes.avatarLg}
+          />
           <View style={styles.flex}>
             <Text variant="h2" numberOfLines={1}>
               {profile.display_name}
@@ -41,17 +51,39 @@ export default function ProfileScreen() {
         </View>
       </GlassCard>
 
-      {profile.role === 'seller' ? (
-        <PillButton
-          label={fr.profile.sellerMode}
-          size="lg"
-          fullWidth
-          icon={<Repeat color={colors.textOnPrimary} size={18} />}
-          loading={switchMode.isPending}
-          onPress={() => switchMode.mutate('seller', { onSuccess: () => router.replace('/(seller)/dashboard') })}
-          style={styles.block}
-          testID="switch-seller"
-        />
+      {profile.role === "seller" ? (
+        <>
+          <PillButton
+            label={fr.profile.sellerMode}
+            size="lg"
+            fullWidth
+            icon={<Repeat color={colors.textOnPrimary} size={18} />}
+            loading={switchMode.isPending}
+            onPress={() =>
+              switchMode.mutate("seller", {
+                onSuccess: () => router.replace("/(seller)/dashboard"),
+              })
+            }
+            style={styles.block}
+            testID="switch-seller"
+          />
+          {shop ? (
+            <PillButton
+              label={fr.shop.view}
+              variant="secondary"
+              fullWidth
+              icon={<Store color={colors.primary} size={18} />}
+              onPress={() =>
+                router.push({
+                  pathname: "/shop/[slug]",
+                  params: { slug: shop.slug },
+                })
+              }
+              style={styles.shopLink}
+              testID="view-my-shop"
+            />
+          ) : null}
+        </>
       ) : (
         <GlassCard style={styles.block}>
           <View style={styles.shopRow}>
@@ -65,7 +97,14 @@ export default function ProfileScreen() {
               </Text>
             </View>
           </View>
-          <PillButton label={fr.nav.openShop} variant="accent" fullWidth onPress={() => router.push('/open-shop')} style={styles.shopCta} testID="open-shop" />
+          <PillButton
+            label={fr.nav.openShop}
+            variant="accent"
+            fullWidth
+            onPress={() => router.push("/open-shop")}
+            style={styles.shopCta}
+            testID="open-shop"
+          />
         </GlassCard>
       )}
 
@@ -81,10 +120,18 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   block: { marginTop: spacing.lg },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  identity: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
   flex: { flex: 1 },
-  city: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  shopRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  shopIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
+  city: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+  shopRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  shopIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: colors.accentSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   shopCta: { marginTop: spacing.lg },
+  shopLink: { marginTop: spacing.md },
 });

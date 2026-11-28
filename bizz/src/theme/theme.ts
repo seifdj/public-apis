@@ -1,14 +1,15 @@
 /**
  * Design tokens. Every colour, font, radius, shadow and spacing used in the app
- * comes from here. See docs/SPEC.md §6 for the reference values.
+ * comes from here. Based on SPEC.md §6; navy and orange were made slightly more vivid on 2026-11-28
+ * at the owner's request (#163E6F -> #12498F, #EF8412 -> #FF8A0A, #D9700A -> #D96500).
  */
 export const colors = {
-  primary: '#163E6F',
-  primaryPressed: '#102E53',
-  primarySoft: 'rgba(22, 62, 111, 0.08)',
-  accent: '#EF8412',
-  accentText: '#D9700A', // orange used as text on white (contrast 4.5:1)
-  accentSoft: 'rgba(239, 132, 18, 0.12)',
+  primary: '#12498F',
+  primaryPressed: '#0D3972',
+  primarySoft: 'rgba(18, 73, 143, 0.09)',
+  accent: '#FF8A0A',
+  accentText: '#D96500', // orange used as text on white (contrast 4.5:1)
+  accentSoft: 'rgba(255, 138, 10, 0.14)',
   text: '#15122B',
   textSecondary: '#55516E',
   textOnPrimary: '#FFFFFF',
@@ -20,14 +21,14 @@ export const colors = {
   success: '#1B7F4A',
   successSoft: 'rgba(27, 127, 74, 0.12)',
   warning: '#9A6700',
-  warningSoft: 'rgba(239, 132, 18, 0.16)',
+  warningSoft: 'rgba(255, 138, 10, 0.16)',
   muted: '#8B889B',
   mutedSoft: 'rgba(21, 18, 43, 0.05)',
   // glass
   glass: 'rgba(255, 255, 255, 0.70)',
   glassOpaque: 'rgba(255, 255, 255, 0.92)',
   glassBorder: 'rgba(255, 255, 255, 0.90)',
-  glassStroke: 'rgba(22, 62, 111, 0.06)',
+  glassStroke: 'rgba(18, 73, 143, 0.06)',
 } as const;
 
 export const fonts = {
@@ -84,9 +85,9 @@ export const sizes = {
 
 /** Soft navy shadows. `boxShadow` renders on iOS, Android 9+ and web with the same look. */
 export const shadows = {
-  glass: { boxShadow: '0px 10px 24px rgba(22, 62, 111, 0.10)' },
-  floating: { boxShadow: '0px 12px 28px rgba(22, 62, 111, 0.18)' },
-  button: { boxShadow: '0px 6px 14px rgba(22, 62, 111, 0.25)' },
+  glass: { boxShadow: '0px 10px 24px rgba(18, 73, 143, 0.10)' },
+  floating: { boxShadow: '0px 12px 28px rgba(18, 73, 143, 0.18)' },
+  button: { boxShadow: '0px 6px 14px rgba(18, 73, 143, 0.25)' },
 } as const;
 
 export const blur = {

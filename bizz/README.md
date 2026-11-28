@@ -12,7 +12,7 @@ npm install
 cp .env.example .env     # puis renseigner l'URL et la clé publique du projet Supabase "Bizz"
 npm run typecheck
 npm run lint
-npm test                 # tests unitaires (téléphone, pseudo)
+npm test                 # tests unitaires (téléphone, pseudo, prix, hashtags)
 npm run db:test          # applique les migrations sur un Postgres local (PostGIS) et lance les tests de fumée
 npm run web              # prévisualisation dans le navigateur (outil de dev, le produit reste iOS + Android)
 ```
@@ -47,6 +47,19 @@ Reste à faire dans le dashboard :
 - Database > Extensions > `pg_cron` (étape 6).
 - Avant le lancement (étape 14) : vrais identifiants Twilio Verify, retrait des numéros de test, désactivation du provider Email.
 
+### Données de démo
+
+30 boutiques et 150 publications dans 12 villes sont chargées sur le projet (`supabase/seed/demo.sql`). Les comptes de démo ne peuvent pas se connecter. Les visuels sont des illustrations générées, à remplacer par de vraies photos si besoin.
+
+```bash
+node scripts/demo/build-seed-sql.mjs                      # régénère supabase/seed/demo.sql depuis shops.json et archetypes.json
+node scripts/demo/make-demo-images.mjs ./demo-images      # régénère les 84 visuels (Playwright + lucide-static)
+```
+
+Tout retirer avant le lancement : `delete from auth.users where email like 'demo%@bizz.test';` puis vider le dossier `demo/` du bucket `post-media`.
+
+Créditer des publications à un compte, pour tester : `select private.grant_post_credits('<user id>', 3, 'admin', 'test');`
+
 ### Règles de sécurité des migrations
 
 Supabase donne par défaut tous les droits sur les nouveaux objets de `public` aux rôles `anon` et `authenticated`. La migration `0006` retire ces droits par défaut. Depuis :
@@ -60,15 +73,15 @@ Supabase donne par défaut tous les droits sur les nouveaux objets de `public` a
 
 ```
 src/app/            écrans (Expo Router) : (onboarding), profile-setup, open-shop, (client), (seller), legal, (gallery) en dev
-src/features/       auth (session, OTP, Apple, Google), account (profil, boutique, ville, avatar), shell
+src/features/       auth (session, OTP, Apple, Google), account (profil, boutique, ville, avatar), posts (formulaire, quota, tuiles), shell
 src/config/brand.ts nom de l'app, scheme, domaine
 src/theme/          theme.ts (tokens), fonts.ts
 src/ui/             composants verre : GlassCard, PillButton, GlassTabBar, Chip, Avatar, PriceTag, StatusBadge, Skeleton, EmptyState, Screen, Text
 src/i18n/fr.ts      toutes les chaînes FR
-src/lib/            supabase.ts, env.ts, queryClient.ts, errors.ts, phone.ts, username.ts, database.types.ts
+src/lib/            supabase.ts, env.ts, queryClient.ts, errors.ts, phone.ts, username.ts, price.ts, hashtags.ts, media.ts, database.types.ts
 src/store/          Zustand (ui, onboarding)
 supabase/           config.toml, migrations/, seed.sql, functions/ (à venir)
-scripts/            test-migrations.sh, load-cities.ts
+scripts/            test-migrations.sh, load-cities.sql, load-cities.ts, demo/ (données de démo)
 docs/               cadrage (décisions, schéma, écrans, étapes)
 ```
 
@@ -78,4 +91,5 @@ docs/               cadrage (décisions, schéma, écrans, étapes)
 |---|---|
 | 1. Socle Expo + Supabase + design system | Fait (projet Supabase créé, migrations 0001-0006 appliquées) |
 | 2. Accueil, choix du rôle, inscription, profil, ouverture de boutique | Fait (migrations 0007-0008). Phone actif en numéros de test ; Apple et Google restent à configurer |
-| 3. Boutique et publications (photos) + quota | À faire |
+| 3. Boutique et publications (photos) + quota | Fait (migrations 0009-0010, données de démo chargées) |
+| 4. Feed + abonnements + likes + favoris | À faire |

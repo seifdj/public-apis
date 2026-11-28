@@ -1,4 +1,5 @@
-import { MapPin } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { Eye, MapPin, Pencil } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { AccountMenu } from '@/features/account/AccountMenu';
@@ -6,10 +7,11 @@ import { formatCity } from '@/features/account/CityPicker';
 import { useCity, useMyProfile, useMyShop } from '@/features/account/hooks';
 import { fr } from '@/i18n/fr';
 import { colors, sizes, spacing } from '@/theme/theme';
-import { Avatar, Chip, GlassCard, Screen, StatusBadge, Text } from '@/ui';
+import { Avatar, Chip, GlassCard, PillButton, Screen, StatusBadge, Text } from '@/ui';
 
-/** Seller "Boutique" tab: how the shop looks, then the account settings. Editing arrives with step 3. */
+/** Seller "Boutique" tab: shop summary, public page and edit, then the account settings. */
 export default function ShopScreen() {
+  const router = useRouter();
   const profile = useMyProfile().data;
   const shop = useMyShop().data;
   const city = useCity(shop?.city_id).data;
@@ -56,6 +58,10 @@ export default function ShopScreen() {
             ))}
           </View>
         ) : null}
+        <View style={styles.actions}>
+          <PillButton label={fr.shop.view} variant="secondary" icon={<Eye color={colors.primary} size={16} />} onPress={() => router.push({ pathname: '/shop/[slug]', params: { slug: shop.slug } })} style={styles.flex} testID="shop-view" />
+          <PillButton label={fr.post.edit} variant="ghost" icon={<Pencil color={colors.primary} size={16} />} onPress={() => router.push('/shop-edit')} style={styles.flex} testID="shop-edit" />
+        </View>
       </GlassCard>
       <View style={styles.block}>
         <AccountMenu profile={profile} />
@@ -70,4 +76,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginVertical: spacing.xs },
   city: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.lg },
+  actions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
+  flex: { flex: 1 },
 });
