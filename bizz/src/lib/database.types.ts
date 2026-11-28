@@ -1,0 +1,1539 @@
+/**
+ * Generated from the Supabase project "Bizz" (migrations 0001-0013).
+ * Regenerate after each migration: `npx supabase gen types typescript --project-id <ref> > src/lib/database.types.ts`
+ * then put this header and the aliases at the bottom back.
+ */
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "17.1"
+  }
+  public: {
+    Tables: {
+      app_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      banned_keywords: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: number
+          severity: string
+          term: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          severity: string
+          term: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          severity?: string
+          term?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banned_keywords_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banned_keywords_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          icon: string
+          id: number
+          is_active: boolean
+          label: string
+          parent_id: number | null
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          icon: string
+          id?: number
+          is_active?: boolean
+          label: string
+          parent_id?: number | null
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          icon?: string
+          id?: number
+          is_active?: boolean
+          label?: string
+          parent_id?: number | null
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cities: {
+        Row: {
+          department: string
+          id: number
+          insee_code: string
+          location: unknown
+          name: string
+          population: number | null
+          postal_codes: string[]
+          region: string | null
+          slug: string
+        }
+        Insert: {
+          department: string
+          id: number
+          insee_code: string
+          location: unknown
+          name: string
+          population?: number | null
+          postal_codes?: string[]
+          region?: string | null
+          slug: string
+        }
+        Update: {
+          department?: string
+          id?: number
+          insee_code?: string
+          location?: unknown
+          name?: string
+          population?: number | null
+          postal_codes?: string[]
+          region?: string | null
+          slug?: string
+        }
+        Relationships: []
+      }
+      daily_post_usage: {
+        Row: {
+          count: number
+          day: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          day: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_post_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_post_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_tokens: {
+        Row: {
+          created_at: string
+          expo_token: string
+          id: string
+          last_seen_at: string
+          platform: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expo_token: string
+          id?: string
+          last_seen_at?: string
+          platform: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expo_token?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          shop_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          shop_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_credits: {
+        Row: {
+          amount: number
+          created_at: string
+          expires_at: string
+          id: string
+          note: string | null
+          purchase_id: string | null
+          remaining: number
+          source: Database["public"]["Enums"]["credit_source"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          note?: string | null
+          purchase_id?: string | null
+          remaining: number
+          source: Database["public"]["Enums"]["credit_source"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          purchase_id?: string | null
+          remaining?: number
+          source?: Database["public"]["Enums"]["credit_source"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_media: {
+        Row: {
+          blurhash: string | null
+          created_at: string
+          duration_s: number | null
+          height: number | null
+          id: string
+          kind: Database["public"]["Enums"]["media_kind"]
+          mux_asset_id: string | null
+          mux_playback_id: string | null
+          mux_upload_id: string | null
+          position: number
+          post_id: string
+          storage_path: string | null
+          video_state: Database["public"]["Enums"]["video_state"] | null
+          width: number | null
+        }
+        Insert: {
+          blurhash?: string | null
+          created_at?: string
+          duration_s?: number | null
+          height?: number | null
+          id?: string
+          kind: Database["public"]["Enums"]["media_kind"]
+          mux_asset_id?: string | null
+          mux_playback_id?: string | null
+          mux_upload_id?: string | null
+          position?: number
+          post_id: string
+          storage_path?: string | null
+          video_state?: Database["public"]["Enums"]["video_state"] | null
+          width?: number | null
+        }
+        Update: {
+          blurhash?: string | null
+          created_at?: string
+          duration_s?: number | null
+          height?: number | null
+          id?: string
+          kind?: Database["public"]["Enums"]["media_kind"]
+          mux_asset_id?: string | null
+          mux_playback_id?: string | null
+          mux_upload_id?: string | null
+          position?: number
+          post_id?: string
+          storage_path?: string | null
+          video_state?: Database["public"]["Enums"]["video_state"] | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_media_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_views: {
+        Row: {
+          post_id: string
+          viewed_hour: string
+          viewer_id: string
+        }
+        Insert: {
+          post_id: string
+          viewed_hour: string
+          viewer_id: string
+        }
+        Update: {
+          post_id?: string
+          viewed_hour?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          author_id: string
+          bumped_at: string
+          category_id: number
+          city_id: number
+          conversations_count: number
+          created_at: string
+          currency: string
+          deleted_at: string | null
+          description: string | null
+          expires_at: string
+          hashtags: string[]
+          id: string
+          likes_count: number
+          location: unknown
+          price_cents: number | null
+          price_mode: Database["public"]["Enums"]["price_mode"]
+          published_at: string
+          saves_count: number
+          search_vector: unknown
+          shop_id: string
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+          updated_at: string
+          views_count: number
+          visibility: Database["public"]["Enums"]["visibility"]
+        }
+        Insert: {
+          author_id: string
+          bumped_at?: string
+          category_id: number
+          city_id: number
+          conversations_count?: number
+          created_at?: string
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          expires_at: string
+          hashtags?: string[]
+          id?: string
+          likes_count?: number
+          location: unknown
+          price_cents?: number | null
+          price_mode?: Database["public"]["Enums"]["price_mode"]
+          published_at?: string
+          saves_count?: number
+          search_vector?: unknown
+          shop_id: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+          updated_at?: string
+          views_count?: number
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Update: {
+          author_id?: string
+          bumped_at?: string
+          category_id?: number
+          city_id?: number
+          conversations_count?: number
+          created_at?: string
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          expires_at?: string
+          hashtags?: string[]
+          id?: string
+          likes_count?: number
+          location?: unknown
+          price_cents?: number | null
+          price_mode?: Database["public"]["Enums"]["price_mode"]
+          published_at?: string
+          saves_count?: number
+          search_vector?: unknown
+          shop_id?: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["post_type"]
+          updated_at?: string
+          views_count?: number
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          active_mode: Database["public"]["Enums"]["active_mode"]
+          avatar_url: string | null
+          city_id: number | null
+          created_at: string
+          deleted_at: string | null
+          display_name: string
+          id: string
+          is_admin: boolean
+          is_moderator: boolean
+          location: unknown
+          moderation_scope:
+            | Database["public"]["Enums"]["moderation_scope"]
+            | null
+          moderation_zone: string | null
+          phone_verified: boolean
+          referral_code: string
+          referred_by: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          suspended_until: string | null
+          terms_accepted_at: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          active_mode?: Database["public"]["Enums"]["active_mode"]
+          avatar_url?: string | null
+          city_id?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          display_name: string
+          id: string
+          is_admin?: boolean
+          is_moderator?: boolean
+          location?: unknown
+          moderation_scope?:
+            | Database["public"]["Enums"]["moderation_scope"]
+            | null
+          moderation_zone?: string | null
+          phone_verified?: boolean
+          referral_code?: string
+          referred_by?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          suspended_until?: string | null
+          terms_accepted_at?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          active_mode?: Database["public"]["Enums"]["active_mode"]
+          avatar_url?: string | null
+          city_id?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          display_name?: string
+          id?: string
+          is_admin?: boolean
+          is_moderator?: boolean
+          location?: unknown
+          moderation_scope?:
+            | Database["public"]["Enums"]["moderation_scope"]
+            | null
+          moderation_zone?: string | null
+          phone_verified?: boolean
+          referral_code?: string
+          referred_by?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          suspended_until?: string | null
+          terms_accepted_at?: string | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          action_id: string | null
+          city_id: number
+          created_at: string
+          department: string
+          details: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          message_id: string | null
+          post_id: string | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id: string
+          review_id: string | null
+          shop_id: string
+          status: Database["public"]["Enums"]["report_status"]
+          target_type: Database["public"]["Enums"]["report_target"]
+        }
+        Insert: {
+          action_id?: string | null
+          city_id: number
+          created_at?: string
+          department: string
+          details?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message_id?: string | null
+          post_id?: string | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id: string
+          review_id?: string | null
+          shop_id: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_type: Database["public"]["Enums"]["report_target"]
+        }
+        Update: {
+          action_id?: string | null
+          city_id?: number
+          created_at?: string
+          department?: string
+          details?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message_id?: string | null
+          post_id?: string | null
+          reason?: Database["public"]["Enums"]["report_reason"]
+          reporter_id?: string
+          review_id?: string | null
+          shop_id?: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_type?: Database["public"]["Enums"]["report_target"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saves: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saves_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saves_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saves_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      search_alerts: {
+        Row: {
+          category_id: number | null
+          city_id: number | null
+          created_at: string
+          id: string
+          is_active: boolean
+          last_notified_at: string | null
+          price_max_cents: number | null
+          price_min_cents: number | null
+          query: string | null
+          radius_km: number | null
+          type: Database["public"]["Enums"]["post_type"] | null
+          user_id: string
+        }
+        Insert: {
+          category_id?: number | null
+          city_id?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_notified_at?: string | null
+          price_max_cents?: number | null
+          price_min_cents?: number | null
+          query?: string | null
+          radius_km?: number | null
+          type?: Database["public"]["Enums"]["post_type"] | null
+          user_id: string
+        }
+        Update: {
+          category_id?: number | null
+          city_id?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_notified_at?: string | null
+          price_max_cents?: number | null
+          price_min_cents?: number | null
+          query?: string | null
+          radius_km?: number | null
+          type?: Database["public"]["Enums"]["post_type"] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_alerts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_alerts_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shops: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          city_id: number
+          cover_url: string | null
+          created_at: string
+          deleted_at: string | null
+          followers_count: number
+          founder_rank: number | null
+          id: string
+          instagram: string | null
+          is_founder: boolean
+          location: unknown
+          name: string
+          owner_id: string
+          posts_count: number
+          rating_avg: number | null
+          rating_count: number
+          slug: string
+          snapchat: string | null
+          status: Database["public"]["Enums"]["shop_status"]
+          tiktok: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          city_id: number
+          cover_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          followers_count?: number
+          founder_rank?: number | null
+          id?: string
+          instagram?: string | null
+          is_founder?: boolean
+          location: unknown
+          name: string
+          owner_id: string
+          posts_count?: number
+          rating_avg?: number | null
+          rating_count?: number
+          slug: string
+          snapchat?: string | null
+          status?: Database["public"]["Enums"]["shop_status"]
+          tiktok?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          city_id?: number
+          cover_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          followers_count?: number
+          founder_rank?: number | null
+          id?: string
+          instagram?: string | null
+          is_founder?: boolean
+          location?: unknown
+          name?: string
+          owner_id?: string
+          posts_count?: number
+          rating_avg?: number | null
+          rating_count?: number
+          slug?: string
+          snapchat?: string | null
+          status?: Database["public"]["Enums"]["shop_status"]
+          tiktok?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shops_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shops_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shops_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          city_id: number | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          city_id?: number | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          city_id?: number | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Functions: {
+      auth_hook_add_claims: { Args: { event: Json }; Returns: Json }
+      block_user: { Args: { p_user_id: string }; Returns: undefined }
+      cancel_account_deletion: { Args: never; Returns: undefined }
+      complete_profile: {
+        Args: {
+          p_avatar_url?: string
+          p_city_id: number
+          p_display_name: string
+          p_username: string
+        }
+        Returns: undefined
+      }
+      create_post: { Args: { p: Json }; Returns: string }
+      delete_post: { Args: { p_post_id: string }; Returns: undefined }
+      drops_today: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          latest_post_id: string
+          name: string
+          posts_today: number
+          shop_id: string
+          slug: string
+        }[]
+      }
+      feed: {
+        Args: {
+          p_city_id?: number
+          p_cursor_id?: string
+          p_cursor_ts?: string
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_radius_km?: number
+          p_tab?: string
+        }
+        Returns: {
+          author_id: string
+          category_id: number
+          city_id: number
+          city_name: string
+          department: string
+          description: string
+          distance_km: number
+          following: boolean
+          hashtags: string[]
+          id: string
+          liked: boolean
+          likes_count: number
+          media: Json
+          price_cents: number
+          price_mode: Database["public"]["Enums"]["price_mode"]
+          published_at: string
+          rank_ts: string
+          saved: boolean
+          saves_count: number
+          shop_avatar_url: string
+          shop_id: string
+          shop_is_founder: boolean
+          shop_name: string
+          shop_slug: string
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+        }[]
+      }
+      find_shops: {
+        Args: {
+          p_category_id?: number
+          p_city_id?: number
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_query?: string
+          p_radius_km?: number
+        }
+        Returns: {
+          avatar_url: string
+          bio: string
+          city_name: string
+          department: string
+          distance_km: number
+          followers_count: number
+          following: boolean
+          id: string
+          is_founder: boolean
+          name: string
+          owner_id: string
+          posts_count: number
+          rating_avg: number
+          rating_count: number
+          slug: string
+        }[]
+      }
+      get_my_profile: {
+        Args: never
+        Returns: {
+          active_mode: Database["public"]["Enums"]["active_mode"]
+          avatar_url: string | null
+          city_id: number | null
+          created_at: string
+          deleted_at: string | null
+          display_name: string
+          id: string
+          is_admin: boolean
+          is_moderator: boolean
+          location: unknown
+          moderation_scope:
+            | Database["public"]["Enums"]["moderation_scope"]
+            | null
+          moderation_zone: string | null
+          phone_verified: boolean
+          referral_code: string
+          referred_by: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          suspended_until: string | null
+          terms_accepted_at: string | null
+          updated_at: string
+          username: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_post_allowance: {
+        Args: never
+        Returns: {
+          can_post: boolean
+          credits: number
+          free_daily: number
+          has_bizzplus: boolean
+          next_reset: string
+          used_today: number
+        }[]
+      }
+      is_username_available: { Args: { p_username: string }; Returns: boolean }
+      my_blocked_users: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          blocked_at: string
+          display_name: string
+          shop_name: string
+          user_id: string
+          username: string
+        }[]
+      }
+      open_shop: {
+        Args: {
+          p_bio?: string
+          p_city_id?: number
+          p_instagram?: string
+          p_name: string
+          p_snapchat?: string
+          p_tiktok?: string
+          p_whatsapp?: string
+        }
+        Returns: string
+      }
+      record_views: { Args: { p_post_ids: string[] }; Returns: undefined }
+      report_target: {
+        Args: {
+          p_details?: string
+          p_reason: Database["public"]["Enums"]["report_reason"]
+          p_target_id: string
+          p_target_type: Database["public"]["Enums"]["report_target"]
+        }
+        Returns: string
+      }
+      request_account_deletion: { Args: never; Returns: undefined }
+      search_cities: {
+        Args: { max_results?: number; q: string }
+        Returns: {
+          department: string
+          id: number
+          insee_code: string
+          location: unknown
+          name: string
+          population: number | null
+          postal_codes: string[]
+          region: string | null
+          slug: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "cities"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      search_posts: {
+        Args: {
+          p_category_id?: number
+          p_city_id?: number
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_min_rating?: number
+          p_offset?: number
+          p_price_max?: number
+          p_price_min?: number
+          p_query?: string
+          p_radius_km?: number
+          p_sort?: string
+          p_type?: Database["public"]["Enums"]["post_type"]
+        }
+        Returns: {
+          author_id: string
+          category_id: number
+          city_id: number
+          city_name: string
+          department: string
+          description: string
+          distance_km: number
+          following: boolean
+          hashtags: string[]
+          id: string
+          liked: boolean
+          likes_count: number
+          media: Json
+          price_cents: number
+          price_mode: Database["public"]["Enums"]["price_mode"]
+          published_at: string
+          rank_ts: string
+          saved: boolean
+          saves_count: number
+          shop_avatar_url: string
+          shop_id: string
+          shop_is_founder: boolean
+          shop_name: string
+          shop_slug: string
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+        }[]
+      }
+      set_active_mode: {
+        Args: { p_mode: Database["public"]["Enums"]["active_mode"] }
+        Returns: undefined
+      }
+      unblock_user: { Args: { p_user_id: string }; Returns: undefined }
+      update_post: { Args: { p: Json; p_post_id: string }; Returns: undefined }
+    }
+    Enums: {
+      active_mode: "client" | "seller"
+      appeal_status: "none" | "appealed" | "upheld" | "overturned"
+      boost_kind: "bump" | "featured_24h"
+      boost_source: "paid" | "bizzplus_weekly"
+      credit_source: "pack" | "referral" | "founder" | "admin" | "compensation"
+      media_kind: "image" | "video"
+      message_kind: "text" | "image" | "availability_request" | "system"
+      moderation_action_kind:
+        | "ignore"
+        | "hide_post"
+        | "unhide_post"
+        | "remove_post"
+        | "suspend_shop"
+        | "unsuspend_shop"
+        | "warn"
+        | "delete_message"
+      moderation_scope: "all" | "department" | "city"
+      notification_kind:
+        | "message"
+        | "follow"
+        | "like"
+        | "availability_request"
+        | "search_alert"
+        | "moderation"
+        | "referral"
+        | "system"
+      post_status: "available" | "reserved" | "sold" | "expired"
+      post_type: "object" | "service" | "creation" | "rental"
+      price_mode: "fixed" | "on_quote"
+      purchase_kind: "pack" | "subscription" | "boost"
+      report_reason:
+        | "forbidden_item"
+        | "counterfeit"
+        | "scam"
+        | "adult"
+        | "harassment"
+        | "spam"
+        | "wrong_category"
+        | "other"
+      report_status: "open" | "handled"
+      report_target: "post" | "shop" | "message" | "review"
+      shop_status: "active" | "hidden" | "suspended"
+      store: "app_store" | "play_store"
+      subscription_status:
+        | "active"
+        | "grace_period"
+        | "billing_issue"
+        | "cancelled"
+        | "expired"
+      user_role: "client" | "seller"
+      video_state: "uploading" | "processing" | "ready" | "errored"
+      visibility: "visible" | "hidden_by_moderation" | "removed"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+// Convenience aliases used across the app.
+export type UserRole = Enums<"user_role">
+export type ActiveMode = Enums<"active_mode">
+export type ModerationScope = Enums<"moderation_scope">
+export type PostType = Enums<"post_type">
+export type PostStatus = Enums<"post_status">
+export type PriceMode = Enums<"price_mode">
+export type Profile = Tables<"profiles">
+export type PublicProfile = Tables<"public_profiles">
+export type Shop = Tables<"shops">
+export type City = Tables<"cities">
+export type Category = Tables<"categories">
+export type Post = Tables<"posts">
+export type PostMedia = Tables<"post_media">
+export type SearchAlert = Tables<"search_alerts">

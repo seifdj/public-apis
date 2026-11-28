@@ -1,0 +1,24 @@
+-- 0002 — Enumerated types (whole app, created once).
+create type public.user_role        as enum ('client', 'seller');
+create type public.active_mode      as enum ('client', 'seller');
+create type public.moderation_scope as enum ('all', 'department', 'city');
+create type public.shop_status      as enum ('active', 'hidden', 'suspended');
+create type public.post_type        as enum ('object', 'service', 'creation', 'rental');
+create type public.price_mode       as enum ('fixed', 'on_quote');
+create type public.post_status      as enum ('available', 'reserved', 'sold', 'expired');
+create type public.visibility       as enum ('visible', 'hidden_by_moderation', 'removed');
+create type public.media_kind       as enum ('image', 'video');
+create type public.video_state      as enum ('uploading', 'processing', 'ready', 'errored');
+create type public.message_kind     as enum ('text', 'image', 'availability_request', 'system');
+create type public.report_target    as enum ('post', 'shop', 'message', 'review');
+create type public.report_reason    as enum ('forbidden_item', 'counterfeit', 'scam', 'adult', 'harassment', 'spam', 'wrong_category', 'other');
+create type public.report_status    as enum ('open', 'handled');
+create type public.moderation_action_kind as enum ('ignore', 'hide_post', 'unhide_post', 'remove_post', 'suspend_shop', 'unsuspend_shop', 'warn', 'delete_message');
+create type public.appeal_status    as enum ('none', 'appealed', 'upheld', 'overturned');
+create type public.credit_source    as enum ('pack', 'referral', 'founder', 'admin', 'compensation');
+create type public.subscription_status as enum ('active', 'grace_period', 'billing_issue', 'cancelled', 'expired');
+create type public.store            as enum ('app_store', 'play_store');
+create type public.purchase_kind    as enum ('pack', 'subscription', 'boost');
+create type public.boost_kind       as enum ('bump', 'featured_24h');
+create type public.boost_source     as enum ('paid', 'bizzplus_weekly');
+create type public.notification_kind as enum ('message', 'follow', 'like', 'availability_request', 'search_alert', 'moderation', 'referral', 'system');
