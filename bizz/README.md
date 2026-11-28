@@ -37,12 +37,15 @@ npx supabase gen types typescript --project-id <ref> > src/lib/database.types.ts
 
 Les 34 875 communes sont chargées dans `cities` (101 départements). Pour recharger : coller `scripts/load-cities.sql` dans le SQL editor. `scripts/load-cities.ts` produit le même contenu en fichier SQL, pour une base locale.
 
-À faire une fois dans le dashboard :
-- Authentication > Hooks > *Customize Access Token (JWT) Claims* → fonction Postgres `public.auth_hook_add_claims`.
-- Authentication > Sign In / Providers > Phone (Twilio Verify). Pour développer sans SMS : « Test Phone Numbers and OTPs », avec **un code que tu choisis et que tu ne commites pas** (ce dépôt est public : un code écrit ici ouvrirait le compte à tout le monde).
-- Authentication > Sign In / Providers > Apple (Services ID + clé) et Google (client OAuth). Redirect URL à autoriser : `bizz://auth/callback`.
-- Avant le lancement : désactiver le provider Email (l'app ne l'utilise pas).
+Réglages d'authentification du projet (faits le 28/11 via l'API d'administration) :
+- Hook *Customize Access Token* actif sur `public.auth_hook_add_claims`.
+- Provider Phone actif, fournisseur Twilio avec des identifiants factices : seuls les numéros de test se connectent (`+33600000001` et `+33600000002`, code connu du propriétaire, jamais écrit ici, valides jusqu'au 30/06/2027).
+- Site URL `bizz://`, redirections autorisées `bizz://**`.
+
+Reste à faire dans le dashboard :
+- Authentication > Sign In / Providers > Apple (Services ID + clé) et Google (client OAuth).
 - Database > Extensions > `pg_cron` (étape 6).
+- Avant le lancement (étape 14) : vrais identifiants Twilio Verify, retrait des numéros de test, désactivation du provider Email.
 
 ### Règles de sécurité des migrations
 
@@ -74,5 +77,5 @@ docs/               cadrage (décisions, schéma, écrans, étapes)
 | Étape | État |
 |---|---|
 | 1. Socle Expo + Supabase + design system | Fait (projet Supabase créé, migrations 0001-0006 appliquées) |
-| 2. Accueil, choix du rôle, inscription, profil, ouverture de boutique | Fait (migrations 0007-0008). Reste à activer Phone, Apple et Google dans le dashboard |
+| 2. Accueil, choix du rôle, inscription, profil, ouverture de boutique | Fait (migrations 0007-0008). Phone actif en numéros de test ; Apple et Google restent à configurer |
 | 3. Boutique et publications (photos) + quota | À faire |
