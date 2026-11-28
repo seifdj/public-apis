@@ -11,7 +11,7 @@ export interface GlassCardProps extends Omit<ViewProps, 'children'>, PropsWithCh
   padding?: number;
   /** Stronger shadow for floating elements (tab bar, sheets). */
   floating?: boolean;
-  /** Always the 92 % white fill, no blur: for panels over a photo, where text must stay readable. */
+  /** Solid white, no blur: for panels over a photo, where text must stay readable. */
   opaque?: boolean;
   style?: ViewStyle;
 }
@@ -25,7 +25,7 @@ export function GlassCard({ children, size = 'lg', padding = spacing.lg, floatin
   const glassMode = useUiStore((s) => s.glassMode);
   const useBlur = glassMode === 'blur' && !opaque;
   const r = size === 'xl' ? radius.xl : radius.lg;
-  const fill = useBlur ? colors.glass : colors.glassOpaque;
+  const fill = opaque ? colors.background : useBlur ? colors.glass : colors.glassOpaque;
 
   return (
     <View {...rest} style={[styles.shadow, floating ? shadows.floating : shadows.glass, { borderRadius: r }, style]}>
