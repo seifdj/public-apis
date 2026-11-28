@@ -12,7 +12,11 @@ export const queryClient = new QueryClient({
 });
 
 export const queryKeys = {
-  profile: (id: string) => ['profile', id] as const,
+  profile: (userId: string) => ['profile', userId] as const,
+  myShop: (userId: string) => ['my-shop', userId] as const,
+  city: (cityId: number) => ['city', cityId] as const,
+  citySearch: (q: string) => ['city-search', q] as const,
+  usernameAvailable: (username: string) => ['username-available', username] as const,
   settings: ['settings'] as const,
   categories: ['categories'] as const,
 } as const;

@@ -1,5 +1,5 @@
 /**
- * Generated from the Supabase project "Bizz" (migrations 0001-0006).
+ * Generated from the Supabase project "Bizz" (migrations 0001-0008; shops and step 2 functions added by hand, regenerate when possible).
  * Regenerate after each migration: `npx supabase gen types typescript --project-id <ref> > src/lib/database.types.ts`
  */
 export type Json =
@@ -356,6 +356,106 @@ export type Database = {
           },
         ]
       }
+      shops: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          city_id: number
+          cover_url: string | null
+          created_at: string
+          deleted_at: string | null
+          followers_count: number
+          founder_rank: number | null
+          id: string
+          instagram: string | null
+          is_founder: boolean
+          location: unknown
+          name: string
+          owner_id: string
+          posts_count: number
+          rating_avg: number | null
+          rating_count: number
+          slug: string
+          snapchat: string | null
+          status: Database["public"]["Enums"]["shop_status"]
+          tiktok: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          city_id: number
+          cover_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          followers_count?: number
+          founder_rank?: number | null
+          id?: string
+          instagram?: string | null
+          is_founder?: boolean
+          location: unknown
+          name: string
+          owner_id: string
+          posts_count?: number
+          rating_avg?: number | null
+          rating_count?: number
+          slug: string
+          snapchat?: string | null
+          status?: Database["public"]["Enums"]["shop_status"]
+          tiktok?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          city_id?: number
+          cover_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          followers_count?: number
+          founder_rank?: number | null
+          id?: string
+          instagram?: string | null
+          is_founder?: boolean
+          location?: unknown
+          name?: string
+          owner_id?: string
+          posts_count?: number
+          rating_avg?: number | null
+          rating_count?: number
+          slug?: string
+          snapchat?: string | null
+          status?: Database["public"]["Enums"]["shop_status"]
+          tiktok?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shops_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shops_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shops_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       public_profiles: {
@@ -399,6 +499,30 @@ export type Database = {
     }
     Functions: {
       auth_hook_add_claims: { Args: { event: Json }; Returns: Json }
+      cancel_account_deletion: { Args: never; Returns: undefined }
+      complete_profile: {
+        Args: {
+          p_avatar_url?: string
+          p_city_id: number
+          p_display_name: string
+          p_username: string
+        }
+        Returns: undefined
+      }
+      is_username_available: { Args: { p_username: string }; Returns: boolean }
+      open_shop: {
+        Args: {
+          p_bio?: string
+          p_city_id?: number
+          p_instagram?: string
+          p_name: string
+          p_snapchat?: string
+          p_tiktok?: string
+          p_whatsapp?: string
+        }
+        Returns: string
+      }
+      request_account_deletion: { Args: never; Returns: undefined }
       get_my_profile: {
         Args: never
         Returns: {
@@ -623,3 +747,5 @@ export type ActiveMode = Enums<"active_mode">
 export type ModerationScope = Enums<"moderation_scope">
 export type Profile = Tables<"profiles">
 export type PublicProfile = Tables<"public_profiles">
+export type Shop = Tables<"shops">
+export type City = Tables<"cities">

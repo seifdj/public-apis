@@ -69,7 +69,7 @@ export function GlassTabBar({ state, descriptors, emitter, navigateToTab, icons,
             </View>
           ) : null}
         </View>
-        <Text variant="label" style={{ color }} numberOfLines={1}>
+        <Text variant="label" style={[styles.label, { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
           {label}
         </Text>
       </Pressable>
@@ -105,11 +105,12 @@ export function GlassTabBar({ state, descriptors, emitter, navigateToTab, icons,
 const styles = StyleSheet.create({
   root: { position: 'absolute', left: spacing.lg, right: spacing.lg, alignItems: 'center' },
   bar: { alignSelf: 'stretch' },
-  row: { flexDirection: 'row', alignItems: 'center', height: sizes.tabBarHeight, paddingHorizontal: spacing.sm },
+  row: { flexDirection: 'row', alignItems: 'center', height: sizes.tabBarHeight, paddingHorizontal: 4 },
+  label: { fontSize: 11, letterSpacing: 0 },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: sizes.touchMin },
   iconWrap: { width: 36, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm },
   iconWrapFocused: { backgroundColor: colors.primarySoft },
-  centerSpacer: { width: sizes.plusButton + spacing.sm },
+  centerSpacer: { width: sizes.plusButton + 4 },
   plus: {
     position: 'absolute',
     top: -(sizes.plusButton / 2) + sizes.tabBarHeight / 2 - 8,

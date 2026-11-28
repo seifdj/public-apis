@@ -12,7 +12,9 @@ npm install
 cp .env.example .env     # puis renseigner l'URL et la clé publique du projet Supabase "Bizz"
 npm run typecheck
 npm run lint
+npm test                 # tests unitaires (téléphone, pseudo)
 npm run db:test          # applique les migrations sur un Postgres local (PostGIS) et lance les tests de fumée
+npm run web              # prévisualisation dans le navigateur (outil de dev, le produit reste iOS + Android)
 ```
 
 Build de développement (nécessaire : expo-blur, expo-haptics et expo-secure-store sont natifs) :
@@ -37,7 +39,9 @@ Les 34 875 communes sont chargées dans `cities` (101 départements). Pour recha
 
 À faire une fois dans le dashboard :
 - Authentication > Hooks > *Customize Access Token (JWT) Claims* → fonction Postgres `public.auth_hook_add_claims`.
-- Authentication > Sign In / Providers > Phone (Twilio Verify), puis Apple et Google (étape 2).
+- Authentication > Sign In / Providers > Phone (Twilio Verify). Pour développer sans SMS : « Test Phone Numbers and OTPs », avec **un code que tu choisis et que tu ne commites pas** (ce dépôt est public : un code écrit ici ouvrirait le compte à tout le monde).
+- Authentication > Sign In / Providers > Apple (Services ID + clé) et Google (client OAuth). Redirect URL à autoriser : `bizz://auth/callback`.
+- Avant le lancement : désactiver le provider Email (l'app ne l'utilise pas).
 - Database > Extensions > `pg_cron` (étape 6).
 
 ### Règles de sécurité des migrations
@@ -52,13 +56,14 @@ Supabase donne par défaut tous les droits sur les nouveaux objets de `public` a
 ## Structure
 
 ```
-src/app/            écrans (Expo Router) — étape 1 : groupe (gallery) de démonstration
+src/app/            écrans (Expo Router) : (onboarding), profile-setup, open-shop, (client), (seller), legal, (gallery) en dev
+src/features/       auth (session, OTP, Apple, Google), account (profil, boutique, ville, avatar), shell
 src/config/brand.ts nom de l'app, scheme, domaine
 src/theme/          theme.ts (tokens), fonts.ts
 src/ui/             composants verre : GlassCard, PillButton, GlassTabBar, Chip, Avatar, PriceTag, StatusBadge, Skeleton, EmptyState, Screen, Text
 src/i18n/fr.ts      toutes les chaînes FR
-src/lib/            supabase.ts, env.ts, queryClient.ts, errors.ts, database.types.ts
-src/store/          Zustand (ui, session)
+src/lib/            supabase.ts, env.ts, queryClient.ts, errors.ts, phone.ts, username.ts, database.types.ts
+src/store/          Zustand (ui, onboarding)
 supabase/           config.toml, migrations/, seed.sql, functions/ (à venir)
 scripts/            test-migrations.sh, load-cities.ts
 docs/               cadrage (décisions, schéma, écrans, étapes)
@@ -69,4 +74,5 @@ docs/               cadrage (décisions, schéma, écrans, étapes)
 | Étape | État |
 |---|---|
 | 1. Socle Expo + Supabase + design system | Fait (projet Supabase créé, migrations 0001-0006 appliquées) |
-| 2. Accueil, choix du rôle, inscription par téléphone | À faire |
+| 2. Accueil, choix du rôle, inscription, profil, ouverture de boutique | Fait (migrations 0007-0008). Reste à activer Phone, Apple et Google dans le dashboard |
+| 3. Boutique et publications (photos) + quota | À faire |

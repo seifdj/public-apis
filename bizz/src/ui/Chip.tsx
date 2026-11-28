@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
 
-import { colors, radius, sizes, spacing } from '@/theme/theme';
+import { colors, radius, spacing } from '@/theme/theme';
 import { Text } from '@/ui/Text';
 
 export interface ChipProps {
@@ -32,7 +32,7 @@ export function Chip({ label, selected = false, icon, onPress, style }: ChipProp
 
 const styles = StyleSheet.create({
   base: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 36, paddingHorizontal: spacing.md, borderRadius: radius.pill, borderWidth: 1 },
-  idle: { backgroundColor: colors.glassOpaque, borderColor: colors.glassBorder, minHeight: Math.min(36, sizes.touchMin) },
+  idle: { backgroundColor: colors.primarySoft, borderColor: 'transparent' },
   selected: { backgroundColor: colors.primary, borderColor: colors.primary },
   pressed: { opacity: 0.8 },
 });

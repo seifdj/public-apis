@@ -5,7 +5,7 @@ import { StyleSheet, Switch, View } from 'react-native';
 import { fr } from '@/i18n/fr';
 import { useUiStore } from '@/store/ui';
 import { colors, spacing } from '@/theme/theme';
-import { Avatar, Chip, EmptyState, GlassCard, IconButton, PillButton, PriceTag, Screen, Skeleton, StatusBadge, Text } from '@/ui';
+import { Avatar, Chip, EmptyState, GlassCard, IconButton, PillButton, PriceTag, Screen, ScreenHeader, Skeleton, StatusBadge, Text } from '@/ui';
 
 export default function ComponentsScreen() {
   const glassMode = useUiStore((s) => s.glassMode);
@@ -15,6 +15,7 @@ export default function ComponentsScreen() {
 
   return (
     <Screen withTabBar>
+      <ScreenHeader />
       <Text variant="h1">{fr.gallery.title}</Text>
       <Text tone="secondary" style={styles.subtitle}>
         {fr.gallery.subtitle}

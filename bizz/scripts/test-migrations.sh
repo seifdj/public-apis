@@ -42,6 +42,16 @@ alter default privileges for role postgres in schema public grant all on tables 
 alter default privileges for role postgres in schema public grant all on sequences to anon, authenticated, service_role;
 alter default privileges for role postgres in schema public grant all on functions to anon, authenticated, service_role;
 grant select, insert, update on auth.users to supabase_auth_admin;
+-- Minimal Storage stub (bucket registry + objects with RLS).
+create schema if not exists storage;
+create table storage.buckets (id text primary key, name text not null, public boolean default false, file_size_limit bigint, allowed_mime_types text[]);
+create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets(id), name text not null, owner uuid);
+alter table storage.objects enable row level security;
+create function storage.foldername(name text) returns text[] language sql immutable as $f$
+  select (string_to_array(name, '/'))[1 : array_length(string_to_array(name, '/'), 1) - 1]
+$f$;
+grant usage on schema storage to authenticated, anon;
+grant select, insert, update, delete on storage.objects to authenticated;
 SQL
 
 # --- Migrations, in order ----------------------------------------------------
@@ -85,6 +95,8 @@ do $$ declare leaked text; begin
      and (n.nspname || '.' || p.proname) not in (
        'public.test_expect_error',
        'public.set_active_mode', 'public.search_cities', 'public.get_my_profile',
+       'public.is_username_available', 'public.complete_profile', 'public.open_shop',
+       'public.request_account_deletion', 'public.cancel_account_deletion',
        'private.is_admin', 'private.is_moderator', 'private.mod_covers', 'private.is_blocked_between',
        'private.paris_today', 'private.immutable_unaccent');
   assert leaked is null, 'unexpected functions executable by authenticated: ' || leaked;
@@ -205,6 +217,8 @@ revoke update (is_admin) on public.profiles from authenticated;
 
 -- 7. Server-side paths may change protected columns; a seller can then switch mode.
 update public.profiles set role = 'seller' where id = '00000000-0000-0000-0000-000000000002';
+insert into public.shops (owner_id, slug, name, city_id, location)
+values ('00000000-0000-0000-0000-000000000002', 'legacy_shop', 'Legacy shop', 69123, (select location from public.cities where id = 69123));
 set role authenticated;
 select public.set_active_mode('seller');
 do $$ begin
@@ -238,6 +252,97 @@ reset role;
 do $$ begin
   assert (select value from public.app_settings where key = 'quota.free_daily') = '2'::jsonb, 'admin setting update';
 end $$;
+
+-- 10. Step 2: sign-up completion, shop opening, account deletion.
+set role supabase_auth_admin;
+insert into auth.users (id, phone, phone_confirmed_at) values ('00000000-0000-0000-0000-000000000003', '+33600000003', now());
+insert into auth.users (id, phone, phone_confirmed_at) values ('00000000-0000-0000-0000-000000000004', '+33600000004', now());
+reset role;
+update public.app_settings set value = '1' where key = 'quota.founder_limit';
+delete from public.shops where slug = 'legacy_shop';
+update public.profiles set role = 'client', active_mode = 'client' where id = '00000000-0000-0000-0000-000000000002';
+
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000003","role":"authenticated","app_metadata":{}}', false);
+do $$ begin
+  assert public.is_username_available('sweetcakes'), 'free username';
+  assert public.is_username_available('  SweetCakes '), 'username is normalized';
+  assert not public.is_username_available('ab'), 'too short';
+  assert not public.is_username_available('sweet cakes'), 'spaces refused';
+  assert not public.is_username_available('admin'), 'reserved';
+  assert not public.is_username_available('user_abc'), 'provisional prefix reserved';
+end $$;
+select public.test_expect_error($q$select public.open_shop('Sweet Cakes')$q$, 'PROFILE_INCOMPLETE');
+select public.test_expect_error($q$select public.complete_profile('ad', 'Sarah', 69123)$q$, 'INVALID_USERNAME');
+select public.test_expect_error($q$select public.complete_profile('sweetcakes', '', 69123)$q$, 'INVALID_DISPLAY_NAME');
+select public.test_expect_error($q$select public.complete_profile('sweetcakes', 'Sarah', 1)$q$, 'INVALID_CITY');
+select public.complete_profile(' SweetCakes', ' Sarah ', 69123);
+do $$ declare p public.profiles; begin
+  select * into p from public.get_my_profile();
+  assert p.username = 'sweetcakes' and p.display_name = 'Sarah' and p.city_id = 69123, 'profile completed';
+  assert p.terms_accepted_at is not null, 'terms accepted';
+  assert p.role = 'client', 'still a client';
+  assert public.is_username_available('sweetcakes'), 'own username stays available to its owner';
+end $$;
+select public.test_expect_error($q$select public.open_shop('S')$q$, 'INVALID_SHOP_NAME');
+select public.open_shop('Sweet Cakes Lyon', 'Layer cakes sur commande', null, '@sweetcakes', null, ' sweet.cakes ', '06 12 34 56 78');
+select public.test_expect_error($q$select public.open_shop('Encore')$q$, 'SHOP_EXISTS');
+do $$ declare p public.profiles; s public.shops; begin
+  select * into p from public.get_my_profile();
+  assert p.role = 'seller' and p.active_mode = 'seller', 'account became a seller';
+  select * into s from public.shops where owner_id = auth.uid();
+  assert s.slug = 'sweetcakes' and s.city_id = 69123, 'shop slug and city';
+  assert s.instagram = 'sweetcakes' and s.tiktok = 'sweet.cakes' and s.whatsapp = '0612345678', 'handles cleaned';
+  assert s.is_founder and s.founder_rank = 1, 'first shop is founder #1';
+  assert extensions.ST_Distance(s.location, (select location from public.cities where id = 69123)) = 0, 'shop location = city location';
+end $$;
+update public.shops set bio = 'Nouvelle bio', city_id = 75056 where owner_id = auth.uid();
+select public.test_expect_error($q$update public.shops set status = 'hidden' where owner_id = auth.uid()$q$, 'permission denied');
+select public.test_expect_error($q$update public.shops set is_founder = false where owner_id = auth.uid()$q$, 'permission denied');
+select public.test_expect_error($q$insert into public.shops (owner_id, slug, name, city_id, location) select auth.uid(), 'x', 'xx', 69123, location from public.cities limit 1$q$, 'permission denied');
+do $$ begin
+  assert (select extensions.ST_Distance(location, (select location from public.cities where id = 75056)) from public.shops where owner_id = auth.uid()) = 0, 'location follows city change';
+end $$;
+select public.set_active_mode('client');
+select public.set_active_mode('seller');
+
+-- second user: username clash, sees the shop, cannot edit it, founder badge exhausted
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000004","role":"authenticated","app_metadata":{}}', false);
+do $$ begin
+  assert not public.is_username_available('SweetCakes'), 'taken username (case-insensitive)';
+  assert (select count(*) from public.shops) = 1, 'active shop visible to others';
+end $$;
+select public.test_expect_error($q$select public.complete_profile('sweetcakes', 'Karim', 75056)$q$, 'USERNAME_TAKEN');
+select public.complete_profile('drip_vintage', 'Karim', 75056);
+update public.shops set name = 'Pwned';
+select public.open_shop('Drip Vintage');
+do $$ begin
+  assert (select not is_founder and founder_rank is null from public.shops where owner_id = auth.uid()), 'founder limit reached';
+  assert (select name from public.shops where slug = 'sweetcakes') = 'Sweet Cakes Lyon', 'cannot edit another shop';
+end $$;
+-- storage: own folder only
+insert into storage.objects (bucket_id, name, owner) values ('avatars', '00000000-0000-0000-0000-000000000004/avatar.jpg', auth.uid());
+select public.test_expect_error($q$insert into storage.objects (bucket_id, name) values ('avatars', '00000000-0000-0000-0000-000000000003/avatar.jpg')$q$, 'row-level security');
+
+-- account deletion hides profile and shop, and is reversible
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000003","role":"authenticated","app_metadata":{}}', false);
+select public.request_account_deletion();
+do $$ begin
+  assert (select deleted_at is not null and active_mode = 'client' from public.get_my_profile()), 'deletion requested';
+end $$;
+select public.test_expect_error($q$select public.set_active_mode('seller')$q$, 'NOT_A_SELLER');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000004","role":"authenticated","app_metadata":{}}', false);
+do $$ begin
+  assert (select count(*) from public.shops where slug = 'sweetcakes') = 0, 'deleted shop hidden';
+  assert (select count(*) from public.public_profiles where username = 'sweetcakes') = 0, 'deleted profile hidden';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000003","role":"authenticated","app_metadata":{}}', false);
+select public.cancel_account_deletion();
+do $$ begin
+  assert (select deleted_at is null from public.get_my_profile()), 'deletion cancelled';
+  assert (select count(*) from public.shops where owner_id = auth.uid() and deleted_at is null) = 1, 'shop restored';
+end $$;
+reset role;
 SQL
 
 $PSQL -c "drop database $DB" >/dev/null

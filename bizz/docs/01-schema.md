@@ -850,7 +850,7 @@ Points à retenir :
 ## 8. Données de démo (seed)
 
 `supabase/seed.sql` + script `scripts/seed-demo.ts` (images libres de droits via Unsplash, téléchargées une fois dans Storage) :
-- 4 comptes de test : `client@test`, `seller@test`, `modo@test` (zone : département 69), `admin@test`. Connexion par téléphone de test Supabase (numéros `+33600000001` à `04`, code `123456`, sans SMS).
+- 4 comptes de test : client, prestataire, modérateur (zone : département 69), admin. Connexion par numéros de test Supabase (`+33600000001` à `04`), avec un code choisi dans le dashboard et jamais écrit dans le dépôt. Le code `123456` ne sert qu'en local (`supabase/config.toml`). Les comptes modérateur et admin de test sont supprimés avant le lancement.
 - 30 boutiques réparties sur Lyon, Paris, Marseille, Lille, Bordeaux, Nantes, Toulouse, Villeurbanne.
 - 150 publications sur 20 catégories, prix réalistes, 10 en `reserved`, 10 en `sold`, 5 avec boost `featured_24h`.
 - 20 conversations, 40 messages, 15 avis, 8 signalements ouverts, 3 actions de modération.

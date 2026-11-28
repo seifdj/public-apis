@@ -5,6 +5,8 @@
 export const APP_NAME = 'Bizz';
 export const APP_NAME_PLUS = `${APP_NAME}+`;
 export const APP_TAGLINE = 'Ton bizz, ta vitrine.';
+/** Lowercase wordmark shown as the logo. */
+export const APP_WORDMARK = `${APP_NAME.toLowerCase()}.`;
 
 /** Deep-link scheme, must match `expo.scheme` in app.json. */
 export const APP_SCHEME = 'bizz';

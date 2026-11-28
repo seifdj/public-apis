@@ -2,8 +2,6 @@
  * Design tokens. Every colour, font, radius, shadow and spacing used in the app
  * comes from here. See docs/SPEC.md §6 for the reference values.
  */
-import { Platform } from 'react-native';
-
 export const colors = {
   primary: '#163E6F',
   primaryPressed: '#102E53',
@@ -25,9 +23,6 @@ export const colors = {
   warningSoft: 'rgba(239, 132, 18, 0.16)',
   muted: '#8B889B',
   mutedSoft: 'rgba(21, 18, 43, 0.05)',
-  // halos drawn behind every screen
-  haloPrimary: 'rgba(22, 62, 111, 0.20)',
-  haloAccent: 'rgba(239, 132, 18, 0.20)',
   // glass
   glass: 'rgba(255, 255, 255, 0.70)',
   glassOpaque: 'rgba(255, 255, 255, 0.92)',
@@ -87,22 +82,11 @@ export const sizes = {
   avatarLg: 80,
 } as const;
 
+/** Soft navy shadows. `boxShadow` renders on iOS, Android 9+ and web with the same look. */
 export const shadows = {
-  glass: Platform.select({
-    ios: { shadowColor: colors.primary, shadowOpacity: 0.10, shadowRadius: 24, shadowOffset: { width: 0, height: 10 } },
-    android: { elevation: 3, shadowColor: colors.primary },
-    default: {},
-  })!,
-  floating: Platform.select({
-    ios: { shadowColor: colors.primary, shadowOpacity: 0.18, shadowRadius: 28, shadowOffset: { width: 0, height: 12 } },
-    android: { elevation: 8, shadowColor: colors.primary },
-    default: {},
-  })!,
-  button: Platform.select({
-    ios: { shadowColor: colors.primary, shadowOpacity: 0.25, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } },
-    android: { elevation: 4, shadowColor: colors.primary },
-    default: {},
-  })!,
+  glass: { boxShadow: '0px 10px 24px rgba(22, 62, 111, 0.10)' },
+  floating: { boxShadow: '0px 12px 28px rgba(22, 62, 111, 0.18)' },
+  button: { boxShadow: '0px 6px 14px rgba(22, 62, 111, 0.25)' },
 } as const;
 
 export const blur = {

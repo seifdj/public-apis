@@ -13,7 +13,8 @@
       "bundleIdentifier": "fr.bizz.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "fr.bizz.app",
@@ -30,6 +31,15 @@
       "expo-router",
       "expo-font",
       "expo-secure-store",
+      "expo-apple-authentication",
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Bizz accède à tes photos pour ta photo de profil et tes publications.",
+          "cameraPermission": "Bizz utilise l'appareil photo pour tes publications."
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -47,6 +57,11 @@
       "eas": {
         "projectId": ""
       }
+    },
+    "web": {
+      "output": "single",
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png"
     }
   }
 }
