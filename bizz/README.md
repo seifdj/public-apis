@@ -80,7 +80,7 @@ Supabase donne par défaut tous les droits sur les nouveaux objets de `public` a
 
 ```
 src/app/            écrans (Expo Router) : (onboarding), profile-setup, open-shop, (client), (seller), legal, (gallery) en dev
-src/features/       auth (session, OTP, Apple, Google), account (profil, boutique, ville, avatar), posts (formulaire, quota, tuiles), shell
+src/features/       auth (session, OTP, Apple, Google), account (profil, boutique, ville, avatar), posts (formulaire, quota, tuiles), social (feed, likes, favoris, abonnements, signalement, blocage), feed (carte, drops), shell
 src/config/brand.ts nom de l'app, scheme, domaine
 src/theme/          theme.ts (tokens), fonts.ts
 src/ui/             composants verre : GlassCard, PillButton, GlassTabBar, Chip, Avatar, PriceTag, StatusBadge, Skeleton, EmptyState, Screen, Text
@@ -99,4 +99,5 @@ docs/               cadrage (décisions, schéma, écrans, étapes)
 | 1. Socle Expo + Supabase + design system | Fait (projet Supabase créé, migrations 0001-0006 appliquées) |
 | 2. Accueil, choix du rôle, inscription, profil, ouverture de boutique | Fait (migrations 0007-0008). Phone actif en numéros de test ; Apple et Google restent à configurer |
 | 3. Boutique et publications (photos) + quota | Fait (migrations 0009-0010, données de démo chargées) |
-| 4. Feed + abonnements + likes + favoris | À faire |
+| 4. Feed + abonnements + likes + favoris + signalement et blocage | Fait (migration 0011) |
+| 5. Recherche + annuaire + géolocalisation | À faire |

@@ -10,6 +10,7 @@ export { OtpInput } from './OtpInput';
 export { PillButton } from './PillButton';
 export { formatPrice, PriceTag } from './PriceTag';
 export { Halos, Screen } from './Screen';
+export { Sheet } from './Sheet';
 export { ScreenHeader } from './ScreenHeader';
 export { Skeleton } from './Skeleton';
 export { StatusBadge, type BadgeKind } from './StatusBadge';

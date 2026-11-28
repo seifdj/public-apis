@@ -859,6 +859,17 @@ Les migrations font foi. Différences avec le texte ci-dessus :
 - Les fichiers remplacés ou supprimés restent dans le bucket `post-media` : nettoyage à prévoir avec les tâches planifiées (étape 6).
 - Bizz+ (`subscriptions`) n'existe pas encore : `get_post_allowance().has_bizzplus` vaut `false` jusqu'à l'étape 9.
 
+## 7.6 Écarts entre ce document et les migrations (étape 4)
+
+- Likes, favoris et abonnements : insertions et suppressions directes, protégées par la RLS (on ne like que ce qu'on peut voir, on ne suit pas sa propre boutique). Les compteurs sont tenus par des triggers. Pas de fonctions `toggle_*`.
+- `feed(onglet, limite, curseur, position, rayon)` remplace `feed_for_you`, `feed_following` et `feed_nearby`. Elle s'exécute avec les droits de l'appelant, donc la RLS des publications s'applique.
+- Classement « Pour toi » : date de remontée, plus 12 h si la catégorie m'intéresse, plus 6 h si je suis la boutique, plus jusqu'à 24 h selon la proximité (0 à 50 km). À revoir quand le volume grandira : la fonction parcourt toutes les publications disponibles.
+- « Près de moi » utilise la ville du profil. La position GPS arrive à l'étape 5.
+- `post_views` : une ligne par personne, publication et heure. L'agrégation en statistiques arrive à l'étape 7.
+- `report_target` : un signalement par personne et par cible, 20 par jour au maximum, masquage automatique au seuil `moderation.auto_hide_threshold`. Messages et avis : étapes 6 et 12.
+- Blocage par `block_user` / `unblock_user` : supprime les abonnements dans les deux sens, masque publications et boutique dans les deux sens.
+- `updated_at` des publications et boutiques ne change plus quand seul un compteur bouge.
+
 ## 8. Données de démo (seed)
 
 `supabase/seed.sql` + script `scripts/seed-demo.ts` (images libres de droits via Unsplash, téléchargées une fois dans Storage) :

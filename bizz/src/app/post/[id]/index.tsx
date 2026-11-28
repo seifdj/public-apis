@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { CircleCheck, MapPin, Pencil, Trash2 } from 'lucide-react-native';
+import { Bookmark, CircleCheck, Ellipsis, Heart, MapPin, Pencil, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
@@ -9,12 +9,14 @@ import { useCity } from '@/features/account/hooks';
 import { useUserId } from '@/features/auth/AuthProvider';
 import { effectiveStatus } from '@/features/posts/api';
 import { useDeletePost, usePost, useSetPostStatus } from '@/features/posts/hooks';
+import { ContentMenu } from '@/features/social/ContentMenu';
+import { usePostFlags, useSocialActions } from '@/features/social/hooks';
 import { fr } from '@/i18n/fr';
 import type { PostStatus } from '@/lib/database.types';
 import { toUserMessage } from '@/lib/errors';
 import { publicUrl } from '@/lib/media';
 import { colors, radius, spacing } from '@/theme/theme';
-import { Avatar, Chip, EmptyState, GlassCard, PillButton, PriceTag, Screen, ScreenHeader, StatusBadge, Text } from '@/ui';
+import { Avatar, Chip, EmptyState, GlassCard, IconButton, PillButton, PriceTag, Screen, ScreenHeader, StatusBadge, Text } from '@/ui';
 
 const SELLER_STATUSES: Exclude<PostStatus, 'expired'>[] = ['available', 'reserved', 'sold'];
 const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long' });
@@ -32,6 +34,9 @@ export default function PostScreen() {
   const remove = useDeletePost(id);
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const flags = usePostFlags(id).data;
+  const { like, save } = useSocialActions();
 
   if (query.isPending) {
     return (
@@ -65,7 +70,28 @@ export default function PostScreen() {
 
   return (
     <Screen>
-      <ScreenHeader onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+      <ScreenHeader
+        onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+        right={
+          isOwner ? undefined : (
+            <View style={styles.headerActions}>
+              <IconButton
+                label={flags?.liked ? fr.feed.unlike : fr.feed.like}
+                icon={<Heart color={flags?.liked ? colors.accent : colors.primary} fill={flags?.liked ? colors.accent : 'transparent'} size={20} />}
+                onPress={() => like.mutate({ postId: post.id, liked: !flags?.liked })}
+                testID="post-like"
+              />
+              <IconButton
+                label={flags?.saved ? fr.feed.unsave : fr.feed.save}
+                icon={<Bookmark color={colors.primary} fill={flags?.saved ? colors.primary : 'transparent'} size={20} />}
+                onPress={() => save.mutate({ postId: post.id, saved: !flags?.saved })}
+                testID="post-save"
+              />
+              <IconButton label={fr.feed.more} icon={<Ellipsis color={colors.primary} size={20} />} onPress={() => setMenuOpen(true)} testID="post-more" />
+            </View>
+          )
+        }
+      />
 
       {published ? (
         <View style={styles.published} testID="post-published">
@@ -175,6 +201,9 @@ export default function PostScreen() {
           </Text>
         </View>
       )}
+      {!isOwner && post.shop ? (
+        <ContentMenu visible={menuOpen} onClose={() => setMenuOpen(false)} target={{ type: 'post', id: post.id }} seller={{ userId: post.author_id, name: post.shop.name }} onBlocked={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+      ) : null}
     </Screen>
   );
 }
@@ -182,6 +211,7 @@ export default function PostScreen() {
 const styles = StyleSheet.create({
   loader: { marginTop: spacing.xxxl },
   flex: { flex: 1 },
+  headerActions: { flexDirection: 'row', gap: spacing.sm },
   published: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.successSoft, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.lg },
   gallery: { borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.mutedSoft },
   counter: { position: 'absolute', right: spacing.md, bottom: spacing.md, backgroundColor: 'rgba(21, 18, 43, 0.6)', borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },

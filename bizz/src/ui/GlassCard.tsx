@@ -11,6 +11,8 @@ export interface GlassCardProps extends Omit<ViewProps, 'children'>, PropsWithCh
   padding?: number;
   /** Stronger shadow for floating elements (tab bar, sheets). */
   floating?: boolean;
+  /** Always the 92 % white fill, no blur: for panels over a photo, where text must stay readable. */
+  opaque?: boolean;
   style?: ViewStyle;
 }
 
@@ -19,9 +21,9 @@ export interface GlassCardProps extends Omit<ViewProps, 'children'>, PropsWithCh
  * soft navy shadow. On Android, `glassMode = 'opaque'` swaps the blur for a
  * 92 % white fill (spec §6).
  */
-export function GlassCard({ children, size = 'lg', padding = spacing.lg, floating = false, style, ...rest }: GlassCardProps) {
+export function GlassCard({ children, size = 'lg', padding = spacing.lg, floating = false, opaque = false, style, ...rest }: GlassCardProps) {
   const glassMode = useUiStore((s) => s.glassMode);
-  const useBlur = glassMode === 'blur';
+  const useBlur = glassMode === 'blur' && !opaque;
   const r = size === 'xl' ? radius.xl : radius.lg;
   const fill = useBlur ? colors.glass : colors.glassOpaque;
 

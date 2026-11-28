@@ -1,5 +1,5 @@
 /**
- * Generated from the Supabase project "Bizz" (migrations 0001-0010).
+ * Generated from the Supabase project "Bizz" (migrations 0001-0011).
  * Regenerate after each migration: `npx supabase gen types typescript --project-id <ref> > src/lib/database.types.ts`
  * then put this header and the aliases at the bottom back.
  */
@@ -293,6 +293,86 @@ export type Database = {
           },
         ]
       }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          shop_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          shop_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_credits: {
         Row: {
           amount: number
@@ -399,6 +479,46 @@ export type Database = {
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_views: {
+        Row: {
+          post_id: string
+          viewed_hour: string
+          viewer_id: string
+        }
+        Insert: {
+          post_id: string
+          viewed_hour: string
+          viewer_id: string
+        }
+        Update: {
+          post_id?: string
+          viewed_hour?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -623,6 +743,146 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          action_id: string | null
+          city_id: number
+          created_at: string
+          department: string
+          details: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          message_id: string | null
+          post_id: string | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id: string
+          review_id: string | null
+          shop_id: string
+          status: Database["public"]["Enums"]["report_status"]
+          target_type: Database["public"]["Enums"]["report_target"]
+        }
+        Insert: {
+          action_id?: string | null
+          city_id: number
+          created_at?: string
+          department: string
+          details?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message_id?: string | null
+          post_id?: string | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id: string
+          review_id?: string | null
+          shop_id: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_type: Database["public"]["Enums"]["report_target"]
+        }
+        Update: {
+          action_id?: string | null
+          city_id?: number
+          created_at?: string
+          department?: string
+          details?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          message_id?: string | null
+          post_id?: string | null
+          reason?: Database["public"]["Enums"]["report_reason"]
+          reporter_id?: string
+          review_id?: string | null
+          shop_id?: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_type?: Database["public"]["Enums"]["report_target"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saves: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saves_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saves_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saves_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shops: {
         Row: {
           avatar_url: string | null
@@ -766,6 +1026,7 @@ export type Database = {
     }
     Functions: {
       auth_hook_add_claims: { Args: { event: Json }; Returns: Json }
+      block_user: { Args: { p_user_id: string }; Returns: undefined }
       cancel_account_deletion: { Args: never; Returns: undefined }
       complete_profile: {
         Args: {
@@ -778,6 +1039,57 @@ export type Database = {
       }
       create_post: { Args: { p: Json }; Returns: string }
       delete_post: { Args: { p_post_id: string }; Returns: undefined }
+      drops_today: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          latest_post_id: string
+          name: string
+          posts_today: number
+          shop_id: string
+          slug: string
+        }[]
+      }
+      feed: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_ts?: string
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_radius_km?: number
+          p_tab?: string
+        }
+        Returns: {
+          author_id: string
+          category_id: number
+          city_id: number
+          city_name: string
+          department: string
+          description: string
+          distance_km: number
+          following: boolean
+          hashtags: string[]
+          id: string
+          liked: boolean
+          likes_count: number
+          media: Json
+          price_cents: number
+          price_mode: Database["public"]["Enums"]["price_mode"]
+          published_at: string
+          rank_ts: string
+          saved: boolean
+          saves_count: number
+          shop_avatar_url: string
+          shop_id: string
+          shop_is_founder: boolean
+          shop_name: string
+          shop_slug: string
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+        }[]
+      }
       get_my_profile: {
         Args: never
         Returns: {
@@ -823,6 +1135,17 @@ export type Database = {
         }[]
       }
       is_username_available: { Args: { p_username: string }; Returns: boolean }
+      my_blocked_users: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          blocked_at: string
+          display_name: string
+          shop_name: string
+          user_id: string
+          username: string
+        }[]
+      }
       open_shop: {
         Args: {
           p_bio?: string
@@ -832,6 +1155,16 @@ export type Database = {
           p_snapchat?: string
           p_tiktok?: string
           p_whatsapp?: string
+        }
+        Returns: string
+      }
+      record_views: { Args: { p_post_ids: string[] }; Returns: undefined }
+      report_target: {
+        Args: {
+          p_details?: string
+          p_reason: Database["public"]["Enums"]["report_reason"]
+          p_target_id: string
+          p_target_type: Database["public"]["Enums"]["report_target"]
         }
         Returns: string
       }
@@ -860,6 +1193,7 @@ export type Database = {
         Args: { p_mode: Database["public"]["Enums"]["active_mode"] }
         Returns: undefined
       }
+      unblock_user: { Args: { p_user_id: string }; Returns: undefined }
       update_post: { Args: { p: Json; p_post_id: string }; Returns: undefined }
     }
     Enums: {

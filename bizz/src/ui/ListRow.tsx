@@ -17,13 +17,8 @@ export interface ListRowProps {
 }
 
 export function ListRow({ icon, label, value, onPress, tone = 'default', right, first = false }: ListRowProps) {
-  return (
-    <Pressable
-      accessibilityRole={onPress ? 'button' : 'text'}
-      disabled={!onPress}
-      onPress={onPress}
-      style={({ pressed }) => [styles.row, !first && styles.divider, pressed && styles.pressed]}
-    >
+  const content = (
+    <>
       {icon ? <View style={styles.icon}>{icon}</View> : null}
       <Text variant="bodyStrong" tone={tone === 'danger' ? 'danger' : 'default'} style={styles.label}>
         {label}
@@ -34,6 +29,13 @@ export function ListRow({ icon, label, value, onPress, tone = 'default', right, 
         </Text>
       ) : null}
       {right ?? (onPress ? <ChevronRight color={colors.muted} size={18} /> : null)}
+    </>
+  );
+  // A row without action is a plain view, so a button placed in `right` stays tappable.
+  if (!onPress) return <View style={[styles.row, !first && styles.divider]}>{content}</View>;
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.row, !first && styles.divider, pressed && styles.pressed]}>
+      {content}
     </Pressable>
   );
 }
@@ -42,6 +44,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: sizes.touchMin + 8, paddingVertical: spacing.sm },
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   pressed: { opacity: 0.6 },
-  icon: { width: 28, alignItems: 'center' },
+  icon: { minWidth: 28, alignItems: 'center' },
   label: { flex: 1 },
 });

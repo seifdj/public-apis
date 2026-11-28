@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { MapPin, Pencil } from 'lucide-react-native';
+import { Ellipsis, MapPin, Pencil } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
@@ -8,9 +8,11 @@ import { useCity } from '@/features/account/hooks';
 import { useUserId } from '@/features/auth/AuthProvider';
 import { useShopBySlug, useShopPosts } from '@/features/posts/hooks';
 import { PostTile } from '@/features/posts/PostTile';
+import { ContentMenu } from '@/features/social/ContentMenu';
+import { useIsFollowing, useSocialActions } from '@/features/social/hooks';
 import { fr } from '@/i18n/fr';
 import { colors, sizes, spacing } from '@/theme/theme';
-import { Avatar, Chip, EmptyState, GlassCard, PillButton, Screen, ScreenHeader, StatusBadge, Text } from '@/ui';
+import { Avatar, Chip, EmptyState, GlassCard, IconButton, PillButton, Screen, ScreenHeader, StatusBadge, Text } from '@/ui';
 
 function Counter({ value, label }: { value: string; label: string }) {
   return (
@@ -33,6 +35,9 @@ export default function ShopScreen() {
   const city = useCity(shop?.city_id).data;
   const posts = useShopPosts(shop?.id);
   const [tab, setTab] = useState<'posts' | 'reviews'>('posts');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const following = useIsFollowing(shop?.id).data ?? false;
+  const { follow } = useSocialActions();
 
   if (shopQuery.isPending) {
     return (
@@ -64,7 +69,7 @@ export default function ShopScreen() {
 
   return (
     <Screen>
-      <ScreenHeader />
+      <ScreenHeader right={isOwner ? undefined : <IconButton label={fr.feed.more} icon={<Ellipsis color={colors.primary} size={20} />} onPress={() => setMenuOpen(true)} testID="shop-more" />} />
       <GlassCard size="xl">
         <View style={styles.center}>
           <Avatar name={shop.name} uri={shop.avatar_url} size={sizes.avatarLg} />
@@ -100,7 +105,7 @@ export default function ShopScreen() {
           <PillButton label={fr.shop.edit} variant="secondary" fullWidth icon={<Pencil color={colors.primary} size={16} />} onPress={() => router.push('/shop-edit')} testID="shop-edit" />
         ) : (
           <View style={styles.actions}>
-            <PillButton label={fr.shop.follow} disabled style={styles.flex} />
+            <PillButton label={following ? fr.feed.following : fr.shop.follow} variant={following ? 'secondary' : 'primary'} onPress={() => follow.mutate({ shopId: shop.id, following: !following })} style={styles.flex} testID="shop-follow" />
             <PillButton label={fr.shop.message} variant="ghost" disabled style={styles.flex} />
           </View>
         )}
@@ -139,6 +144,9 @@ export default function ShopScreen() {
           ))}
         </View>
       )}
+      {!isOwner ? (
+        <ContentMenu visible={menuOpen} onClose={() => setMenuOpen(false)} target={{ type: 'shop', id: shop.id }} seller={{ userId: shop.owner_id, name: shop.name }} onBlocked={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+      ) : null}
     </Screen>
   );
 }

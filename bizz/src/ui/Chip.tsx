@@ -10,16 +10,18 @@ export interface ChipProps {
   icon?: ReactNode;
   onPress?: () => void;
   style?: ViewStyle;
+  testID?: string;
 }
 
 /** Filter chip: white glass by default, navy when selected. */
-export function Chip({ label, selected = false, icon, onPress, style }: ChipProps) {
+export function Chip({ label, selected = false, icon, onPress, style, testID }: ChipProps) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected }}
       onPress={onPress}
       disabled={!onPress}
+      testID={testID}
       style={({ pressed }) => [styles.base, selected ? styles.selected : styles.idle, pressed && styles.pressed, style]}
     >
       {icon}

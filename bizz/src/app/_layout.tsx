@@ -50,6 +50,9 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         <Stack.Screen name="post/[id]/edit" />
         <Stack.Screen name="shop/[slug]" />
         <Stack.Screen name="shop-edit" />
+        <Stack.Screen name="saved" />
+        <Stack.Screen name="following" />
+        <Stack.Screen name="blocked" />
       </Stack.Protected>
       <Stack.Screen name="legal/[doc]" options={{ presentation: 'modal' }} />
       <Stack.Screen name="(gallery)" />

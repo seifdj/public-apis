@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, type PressableProps, StyleSheet, View, ty
 import { colors, radius, shadows, sizes, spacing } from '@/theme/theme';
 import { Text } from '@/ui/Text';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger' | 'light';
 type Size = 'md' | 'lg' | 'sm';
 
 export interface PillButtonProps extends Omit<PressableProps, 'style' | 'children'> {
@@ -64,6 +64,8 @@ const variantStyles = StyleSheet.create({
   danger: { backgroundColor: colors.danger },
   secondary: { backgroundColor: colors.primarySoft },
   ghost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary },
+  // solid white, for buttons drawn over a photo
+  light: { backgroundColor: colors.background },
 });
 
 const styles = StyleSheet.create({

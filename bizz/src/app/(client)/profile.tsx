@@ -1,18 +1,13 @@
-import { useRouter } from "expo-router";
-import { MapPin, Repeat, Store } from "lucide-react-native";
-import { StyleSheet, View } from "react-native";
+import { useRouter } from 'expo-router';
+import { Ban, Bookmark, Heart, MapPin, Repeat, Store } from 'lucide-react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { AccountMenu } from "@/features/account/AccountMenu";
-import { formatCity } from "@/features/account/CityPicker";
-import {
-  useCity,
-  useMyProfile,
-  useMyShop,
-  useSwitchMode,
-} from "@/features/account/hooks";
-import { fr } from "@/i18n/fr";
-import { colors, sizes, spacing } from "@/theme/theme";
-import { Avatar, GlassCard, PillButton, Screen, Text } from "@/ui";
+import { AccountMenu } from '@/features/account/AccountMenu';
+import { formatCity } from '@/features/account/CityPicker';
+import { useCity, useMyProfile, useMyShop, useSwitchMode } from '@/features/account/hooks';
+import { fr } from '@/i18n/fr';
+import { colors, sizes, spacing } from '@/theme/theme';
+import { Avatar, GlassCard, ListRow, PillButton, Screen, Text } from '@/ui';
 
 /** Client profile: identity, "Ouvre ta boutique" or "Mode prestataire", account settings. */
 export default function ProfileScreen() {
@@ -29,11 +24,7 @@ export default function ProfileScreen() {
 
       <GlassCard size="xl" style={styles.block}>
         <View style={styles.identity}>
-          <Avatar
-            name={profile.display_name}
-            uri={profile.avatar_url}
-            size={sizes.avatarLg}
-          />
+          <Avatar name={profile.display_name} uri={profile.avatar_url} size={sizes.avatarLg} />
           <View style={styles.flex}>
             <Text variant="h2" numberOfLines={1}>
               {profile.display_name}
@@ -51,7 +42,7 @@ export default function ProfileScreen() {
         </View>
       </GlassCard>
 
-      {profile.role === "seller" ? (
+      {profile.role === 'seller' ? (
         <>
           <PillButton
             label={fr.profile.sellerMode}
@@ -60,8 +51,8 @@ export default function ProfileScreen() {
             icon={<Repeat color={colors.textOnPrimary} size={18} />}
             loading={switchMode.isPending}
             onPress={() =>
-              switchMode.mutate("seller", {
-                onSuccess: () => router.replace("/(seller)/dashboard"),
+              switchMode.mutate('seller', {
+                onSuccess: () => router.replace('/(seller)/dashboard'),
               })
             }
             style={styles.block}
@@ -75,7 +66,7 @@ export default function ProfileScreen() {
               icon={<Store color={colors.primary} size={18} />}
               onPress={() =>
                 router.push({
-                  pathname: "/shop/[slug]",
+                  pathname: '/shop/[slug]',
                   params: { slug: shop.slug },
                 })
               }
@@ -97,16 +88,15 @@ export default function ProfileScreen() {
               </Text>
             </View>
           </View>
-          <PillButton
-            label={fr.nav.openShop}
-            variant="accent"
-            fullWidth
-            onPress={() => router.push("/open-shop")}
-            style={styles.shopCta}
-            testID="open-shop"
-          />
+          <PillButton label={fr.nav.openShop} variant="accent" fullWidth onPress={() => router.push('/open-shop')} style={styles.shopCta} testID="open-shop" />
         </GlassCard>
       )}
+
+      <GlassCard style={styles.block} padding={16}>
+        <ListRow first icon={<Bookmark color={colors.primary} size={20} />} label={fr.library.saved} onPress={() => router.push('/saved')} />
+        <ListRow icon={<Heart color={colors.primary} size={20} />} label={fr.library.following} onPress={() => router.push('/following')} />
+        <ListRow icon={<Ban color={colors.primary} size={20} />} label={fr.library.blocked} onPress={() => router.push('/blocked')} />
+      </GlassCard>
 
       <View style={styles.block}>
         <AccountMenu profile={profile} />
@@ -120,17 +110,17 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   block: { marginTop: spacing.lg },
-  identity: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   flex: { flex: 1 },
-  city: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
-  shopRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  city: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  shopRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   shopIcon: {
     width: 48,
     height: 48,
     borderRadius: 16,
     backgroundColor: colors.accentSoft,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   shopCta: { marginTop: spacing.lg },
   shopLink: { marginTop: spacing.md },

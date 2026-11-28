@@ -102,6 +102,8 @@ do $$ declare leaked text; begin
        'public.is_username_available', 'public.complete_profile', 'public.open_shop',
        'public.request_account_deletion', 'public.cancel_account_deletion',
        'public.get_post_allowance', 'public.create_post', 'public.update_post', 'public.delete_post',
+       'public.block_user', 'public.unblock_user', 'public.my_blocked_users', 'public.report_target',
+       'public.record_views', 'public.feed', 'public.drops_today',
        'private.is_admin', 'private.is_moderator', 'private.mod_covers', 'private.is_blocked_between',
        'private.paris_today', 'private.immutable_unaccent', 'private.post_search_vector');
   assert leaked is null, 'unexpected functions executable by authenticated: ' || leaked;
@@ -201,8 +203,9 @@ do $$ begin
   assert (select count(*) from public.search_cities('lyo')) = 1, 'search_cities(lyo)';
   assert (select name from public.search_cities('75001') limit 1) = 'Paris', 'search_cities by postal code';
 end $$;
-insert into public.blocks (blocker_id, blocked_id) values (auth.uid(), '00000000-0000-0000-0000-000000000001');
-select public.test_expect_error($q$insert into public.blocks (blocker_id, blocked_id) values ('00000000-0000-0000-0000-000000000001', auth.uid())$q$, 'row-level security');
+select public.block_user('00000000-0000-0000-0000-000000000001');
+select public.test_expect_error($q$insert into public.blocks (blocker_id, blocked_id) values (auth.uid(), '00000000-0000-0000-0000-000000000003')$q$, 'permission denied');
+select public.test_expect_error($q$select public.block_user(auth.uid())$q$, 'CANNOT_BLOCK_SELF');
 do $$ begin
   assert private.is_blocked_between('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002'), 'is_blocked_between';
 end $$;
@@ -479,7 +482,7 @@ update public.posts set status = 'sold';
 select public.test_expect_error($q$select public.update_post((select v from public.test_ids where k = 'p1'), public.test_post_payload('Hack', array['00000000-0000-0000-0000-000000000003/a.jpg']))$q$, 'POST_NOT_FOUND');
 select public.test_expect_error($q$select public.delete_post((select v from public.test_ids where k = 'p1'))$q$, 'POST_NOT_FOUND');
 select public.test_expect_error($q$select public.create_post(public.test_post_payload('Annonce client', array['00000000-0000-0000-0000-000000000003/a.jpg']))$q$, 'NO_SHOP');
-insert into public.blocks (blocker_id, blocked_id) values (auth.uid(), '00000000-0000-0000-0000-000000000003') on conflict do nothing;
+select public.block_user('00000000-0000-0000-0000-000000000003');
 do $$ begin
   assert (select count(*) from public.posts) = 0, 'posts of a blocked seller disappear';
 end $$;
@@ -525,6 +528,145 @@ set role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000004","role":"authenticated","app_metadata":{}}', false);
 insert into storage.objects (bucket_id, name, owner) values ('post-media', '00000000-0000-0000-0000-000000000004/a.jpg', auth.uid());
 select public.test_expect_error($q$select public.create_post(public.test_post_payload('Veste vintage', array['00000000-0000-0000-0000-000000000004/a.jpg']))$q$, 'PHONE_NOT_VERIFIED');
+reset role;
+
+-- 12. Step 4: follows, likes, saves, feed, drops, views, reports, blocking.
+-- user 2 = client (Lyon), user 3 = seller sweetcakes (posts p2, p3 in Lyon... p2 was moved? no: p2, p3 are in Lyon), user 4 = seller drip_vintage (Paris).
+delete from public.blocks;
+update public.profiles set city_id = 69123, terms_accepted_at = now() where id = '00000000-0000-0000-0000-000000000002';
+update public.posts set status = 'available', visibility = 'visible', expires_at = now() + interval '30 days', bumped_at = now() - interval '2 hours'
+ where author_id = '00000000-0000-0000-0000-000000000003' and deleted_at is null;
+insert into public.posts (id, shop_id, author_id, type, title, category_id, city_id, location, price_cents, expires_at, bumped_at, published_at)
+select md5('t4-' || g)::uuid, s.id, s.owner_id, 'object', 'Veste vintage ' || g, (select id from public.categories where slug = 'fashion'), 75056, s.location, 4500,
+       now() + interval '30 days', now() - make_interval(hours => g), now() - make_interval(hours => g)
+  from public.shops s, generate_series(1, 4) g where s.slug = 'drip_vintage';
+update public.posts set status = 'sold' where id = md5('t4-4')::uuid;
+insert into public.test_ids select 'shop3', id from public.shops where slug = 'sweetcakes';
+insert into public.test_ids select 'shop4', id from public.shops where slug = 'drip_vintage';
+create table public.test_ts (k text primary key, v timestamptz);
+grant all on public.test_ts to authenticated;
+insert into public.test_ts select 'p2_updated', updated_at from public.posts where id = (select v from public.test_ids where k = 'p2');
+
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000002","role":"authenticated","app_metadata":{}}', false);
+-- follow
+insert into public.follows (follower_id, shop_id) values (auth.uid(), (select v from public.test_ids where k = 'shop3'));
+select public.test_expect_error($q$insert into public.follows (follower_id, shop_id) values (auth.uid(), (select v from public.test_ids where k = 'shop3'))$q$, 'duplicate key');
+select public.test_expect_error($q$insert into public.follows (follower_id, shop_id) values ('00000000-0000-0000-0000-000000000004', (select v from public.test_ids where k = 'shop3'))$q$, 'row-level security');
+-- like / save
+insert into public.likes (user_id, post_id) values (auth.uid(), (select v from public.test_ids where k = 'p2'));
+insert into public.saves (user_id, post_id) values (auth.uid(), (select v from public.test_ids where k = 'p2'));
+insert into public.likes (user_id, post_id) values (auth.uid(), md5('t4-1')::uuid);
+select public.test_expect_error($q$insert into public.likes (user_id, post_id) values (auth.uid(), gen_random_uuid())$q$, 'row-level security');
+select public.test_expect_error($q$update public.likes set created_at = now()$q$, 'permission denied');
+select public.test_expect_error($q$update public.posts set likes_count = 999 where id = (select v from public.test_ids where k = 'p2')$q$, 'permission denied');
+do $$ declare r record; n int; first_ids uuid[]; second_ids uuid[]; begin
+  assert (select followers_count from public.shops where slug = 'sweetcakes') = 1, 'followers_count +1';
+  select * into r from public.posts where id = (select v from public.test_ids where k = 'p2');
+  assert r.likes_count = 1 and r.saves_count = 1, 'likes_count and saves_count +1';
+  assert r.updated_at = (select v from public.test_ts where k = 'p2_updated'), 'a like must not touch updated_at';
+
+  -- for_you: every available post of others, with my flags
+  select count(*) into n from public.feed('for_you', 30);
+  assert n = 5, 'for_you returns the 5 available posts of other sellers, got ' || n;
+  select * into r from public.feed('for_you', 30) f where f.id = (select v from public.test_ids where k = 'p2');
+  assert r.liked and r.saved and r.following, 'flags liked / saved / following';
+  assert r.shop_slug = 'sweetcakes' and r.city_name = 'Lyon' and jsonb_array_length(r.media) = 1, 'shop, city and media embedded';
+  assert r.distance_km = 0, 'distance from my city (Lyon)';
+  select * into r from public.feed('for_you', 30) f where f.id = md5('t4-1')::uuid;
+  assert not r.saved and r.liked and not r.following and r.distance_km > 350, 'Paris post flags and distance';
+  assert (select count(*) from public.feed('for_you', 30) f where f.status <> 'available') = 0, 'sold posts stay out of the feed';
+  -- nearby and followed posts rank above farther, unfollowed ones of the same age
+  assert (select f.shop_slug from public.feed('for_you', 1) f) = 'sweetcakes', 'for_you favours followed + nearby';
+
+  -- keyset pagination: two pages, no overlap, nothing lost
+  select array_agg(f.id) into first_ids from public.feed('for_you', 3) f;
+  select array_agg(f2.id) into second_ids
+    from public.feed('for_you', 3, (select min(f.rank_ts) from public.feed('for_you', 3) f),
+                     (select f.id from public.feed('for_you', 3) f order by f.rank_ts, f.id limit 1)) f2;
+  assert array_length(first_ids, 1) = 3 and array_length(second_ids, 1) = 2 and not (first_ids && second_ids), 'pagination: 3 + 2 distinct posts';
+
+  -- following / nearby
+  assert (select count(*) from public.feed('following', 30)) = 2 and (select count(distinct f.shop_slug) from public.feed('following', 30) f) = 1, 'following = the followed shop only';
+  assert (select count(*) from public.feed('nearby', 30)) = 2, 'nearby = around my city';
+  assert (select count(*) from public.feed('nearby', 30, null, null, 48.8566, 2.3522, 10)) = 3, 'nearby with an explicit position (Paris)';
+  assert (select count(*) from public.feed('nearby', 30, null, null, 43.2965, 5.3698, 10)) = 0, 'nothing around Marseille';
+
+  -- drops
+  select * into r from public.drops_today();
+  assert r.slug = 'sweetcakes' and r.posts_today = 2, 'drops: the followed shop that published today';
+end $$;
+-- views
+select public.record_views(array[(select v from public.test_ids where k = 'p2'), md5('t4-1')::uuid, gen_random_uuid()]);
+select public.record_views(array[(select v from public.test_ids where k = 'p2')]);
+select public.test_expect_error($q$select count(*) from public.post_views$q$, 'permission denied');
+-- reports
+insert into public.test_ids select 'r1', public.report_target('post', (select v from public.test_ids where k = 'p2'), 'scam', '  Prix trop beau pour être vrai  ');
+do $$ begin
+  assert public.report_target('post', (select v from public.test_ids where k = 'p2'), 'spam') = (select v from public.test_ids where k = 'r1'), 'reporting twice returns the same report';
+  assert (select count(*) from public.reports) = 1, 'no duplicate report';
+  assert (select department = '69' and city_id = 69123 and details = 'Prix trop beau pour être vrai' and status = 'open' from public.reports), 'report routed to the shop zone';
+  assert public.report_target('shop', (select v from public.test_ids where k = 'shop4'), 'counterfeit') is not null, 'shop report';
+end $$;
+select public.test_expect_error($q$select public.report_target('post', gen_random_uuid(), 'spam')$q$, 'TARGET_NOT_FOUND');
+select public.test_expect_error($q$select public.report_target('message', gen_random_uuid(), 'spam')$q$, 'UNSUPPORTED_TARGET');
+select public.test_expect_error($q$insert into public.reports (reporter_id, target_type, shop_id, reason, department, city_id) values (auth.uid(), 'shop', (select v from public.test_ids where k = 'shop4'), 'spam', '75', 75056)$q$, 'permission denied');
+reset role;
+do $$ begin
+  assert (select count(*) from public.post_views) = 2, 'two distinct views recorded (unknown id and repeat ignored)';
+end $$;
+
+-- the seller: cannot follow, like-count or report their own things; own posts are not in their feed
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000003","role":"authenticated","app_metadata":{}}', false);
+select public.test_expect_error($q$insert into public.follows (follower_id, shop_id) values (auth.uid(), (select v from public.test_ids where k = 'shop3'))$q$, 'row-level security');
+select public.test_expect_error($q$select public.report_target('post', (select v from public.test_ids where k = 'p2'), 'spam')$q$, 'CANNOT_REPORT_OWN');
+select public.record_views(array[(select v from public.test_ids where k = 'p2')]);
+do $$ begin
+  assert (select count(*) from public.feed('for_you', 30) f where f.shop_slug = 'sweetcakes') = 0, 'own posts are not in my feed';
+  assert (select count(*) from public.follows) = 0 and (select count(*) from public.likes) = 0 and (select count(*) from public.reports) = 0, 'follows, likes and reports of others are private';
+end $$;
+reset role;
+do $$ begin
+  assert (select count(*) from public.post_views) = 2, 'own views are not counted';
+end $$;
+
+-- auto-hide after N distinct reporters
+update public.app_settings set value = '2' where key = 'moderation.auto_hide_threshold';
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000004","role":"authenticated","app_metadata":{}}', false);
+select public.report_target('post', (select v from public.test_ids where k = 'p2'), 'forbidden_item');
+reset role;
+do $$ begin
+  assert (select visibility from public.posts where id = (select v from public.test_ids where k = 'p2')) = 'hidden_by_moderation', 'post hidden after 2 distinct reports';
+  assert (select count(*) from private.job_queue where kind = 'post_auto_hidden') = 1, 'auto-hide queued for the moderation team';
+end $$;
+update public.posts set visibility = 'visible' where id = (select v from public.test_ids where k = 'p2');
+
+-- blocking: follow removed, posts and shop gone, both ways
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000002","role":"authenticated","app_metadata":{}}', false);
+select public.block_user('00000000-0000-0000-0000-000000000003');
+do $$ declare r record; begin
+  assert (select count(*) from public.follows) = 0, 'block removes the follow';
+  assert (select count(*) from public.feed('for_you', 30) f where f.shop_slug = 'sweetcakes') = 0, 'blocked seller leaves the feed';
+  assert (select count(*) from public.shops where slug = 'sweetcakes') = 0, 'blocked shop is hidden';
+  assert (select count(*) from public.drops_today()) = 0, 'no drop from a blocked shop';
+  select * into r from public.my_blocked_users();
+  assert r.username = 'sweetcakes' and r.shop_name = 'Sweet Cakes Lyon', 'blocked list';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000003","role":"authenticated","app_metadata":{}}', false);
+do $$ begin
+  assert (select followers_count from public.shops where slug = 'sweetcakes') = 0, 'followers_count back to 0';
+  assert (select count(*) from public.my_blocked_users()) = 0, 'the blocked person does not see who blocked them';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000002","role":"authenticated","app_metadata":{}}', false);
+select public.unblock_user('00000000-0000-0000-0000-000000000003');
+delete from public.likes where user_id = auth.uid() and post_id = (select v from public.test_ids where k = 'p2');
+do $$ begin
+  assert (select count(*) from public.shops where slug = 'sweetcakes') = 1, 'unblock restores the shop';
+  assert (select likes_count from public.posts where id = (select v from public.test_ids where k = 'p2')) = 0, 'unlike decrements';
+end $$;
 reset role;
 SQL
 
