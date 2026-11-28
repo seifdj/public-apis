@@ -5,6 +5,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
+    "go": "expo start --go",
+    "go:tunnel": "expo start --go --tunnel",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "lint": "expo lint",

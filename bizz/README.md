@@ -17,11 +17,18 @@ npm run db:test          # applique les migrations sur un Postgres local (PostGI
 npm run web              # prévisualisation dans le navigateur (outil de dev, le produit reste iOS + Android)
 ```
 
-Build de développement (nécessaire : expo-blur, expo-haptics et expo-secure-store sont natifs) :
+Tester sur téléphone avec **Expo Go** (le plus simple, aucun build) :
 
 ```bash
-npx eas-cli@latest build --profile development --platform ios
+npm run go            # affiche un QR code : appareil photo sur iPhone, app Expo Go sur Android
+npm run go:tunnel     # si le téléphone et l'ordinateur ne sont pas sur le même Wi-Fi
+```
+
+Tous les modules natifs utilisés jusqu'à l'étape 3 sont inclus dans Expo Go (SDK 58). Limites d'Expo Go : la connexion Apple et Google ne fonctionne pas (adresse de retour différente). Un build de développement deviendra nécessaire à l'étape 9 (achats in-app), et avant pour tester Apple, Google et les liens `bizz://` :
+
+```bash
 npx eas-cli@latest build --profile development --platform android
+npx eas-cli@latest build --profile development --platform ios
 npx expo start --dev-client
 ```
 
